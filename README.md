@@ -1,4 +1,9 @@
-Copyright 2018 S. Kevin Hester-Chow, License TBD 
+# Micro-RTSP
+
+This is a small library which can be used to serve up RTSP streams from
+resource constrained MCUs.
+
+Copyright 2018 S. Kevin Hester-Chow, Licensed GNU GENERAL PUBLIC LICENSE under the Version 3
 
 # Credits
 
