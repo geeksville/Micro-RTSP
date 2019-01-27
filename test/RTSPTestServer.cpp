@@ -114,7 +114,9 @@ void workerThread(SOCKET s)
 
     while (!rtsp.m_stopped)
     {
-        rtsp.doIdle();
+        uint32_t timeout = 100;
+        if(!rtsp.handleRequests(timeout))
+            rtsp.broadcastCurrentFrame();
     }
 }
 

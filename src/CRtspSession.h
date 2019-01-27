@@ -28,9 +28,16 @@ public:
     int            GetStreamID();
 
     /**
-       Read from our socket, parsing commands as possible.  Broadcast frames as needed
+       Read from our socket, parsing commands as possible.
+
+       return false if the read timed out
      */
-    void doIdle();
+    bool handleRequests(uint32_t readTimeoutMs);
+
+    /**
+       broadcast a current frame
+     */
+    void broadcastCurrentFrame();
 
     bool m_streaming;
     bool m_stopped;

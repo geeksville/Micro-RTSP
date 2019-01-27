@@ -1,7 +1,6 @@
 #include "JPEGSamples.h"
 
-
-
+#ifdef INCLUDE_SIMDATA
 // APP0 e0
 // DQT db
 // DQT db
@@ -3324,3 +3323,5 @@ unsigned const char octo_jpg[] = {
     0x14, 0x50, 0x01, 0x45, 0x14, 0x50, 0x07, 0xff, 0xd9
 };
 unsigned int octo_jpg_len = 14817;
+
+#endif

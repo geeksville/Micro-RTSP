@@ -368,19 +368,17 @@ int CRtspSession::GetStreamID()
 
 
 /**
-   Read from our socket, parsing commands as possible.  Broadcast frames as needed
+   Read from our socket, parsing commands as possible.
  */
-void CRtspSession::doIdle()
+bool CRtspSession::handleRequests(uint32_t readTimeoutMs)
 {
     if(m_stopped)
-        return; // Already closed down
+        return false; // Already closed down
 
     static char RecvBuf[RTSP_BUFFER_SIZE];   // Note: we assume single threaded, this large buf we keep off of the tiny stack
 
-    int msecsPerFrame = 100;
-
     memset(RecvBuf,0x00,sizeof(RecvBuf));
-    int res = socketread(m_RtspClient,RecvBuf,sizeof(RecvBuf), msecsPerFrame);
+    int res = socketread(m_RtspClient,RecvBuf,sizeof(RecvBuf), readTimeoutMs);
     if(res > 0) {
         // we filter away everything which seems not to be an RTSP command: O-ption, D-escribe, S-etup, P-lay, T-eardown
         if ((RecvBuf[0] == 'O') || (RecvBuf[0] == 'D') || (RecvBuf[0] == 'S') || (RecvBuf[0] == 'P') || (RecvBuf[0] == 'T'))
@@ -391,18 +389,24 @@ void CRtspSession::doIdle()
             else if (C == RTSP_TEARDOWN)
                 m_stopped = true;
         }
+        return true;
     }
     else if(res == 0) {
         printf("client closed socket, exiting\n");
         m_stopped = true;
+        return true;
     }
-    else if(res < 0) {
+    else  {
         // Timeout on read
 
-        // Send a frame
-        if (m_streaming) {
-            // printf("serving a frame\n");
-            m_Streamer->streamImage();
-        }
+        return false;
+    }
+}
+
+void CRtspSession::broadcastCurrentFrame() {
+    // Send a frame
+    if (m_streaming && !m_stopped) {
+        // printf("serving a frame\n");
+        m_Streamer->streamImage();
     }
 }

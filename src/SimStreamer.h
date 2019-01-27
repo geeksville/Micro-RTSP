@@ -1,8 +1,10 @@
 #pragma once
 
+#include "JPEGSamples.h"
 #include "CStreamer.h"
 
-class SimStreamer: public CStreamer
+#ifdef INCLUDE_SIMDATA
+class SimStreamer : public CStreamer
 {
     bool m_showBig;
 public:
@@ -10,3 +12,4 @@ public:
 
     virtual void    streamImage();
 };
+#endif

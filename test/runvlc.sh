@@ -1,2 +1,2 @@
 # for testing
-cvlc -v rtsp://127.0.0.1:8554/mjpeg/1
+vlc -v rtsp://127.0.0.1:8554/mjpeg/1

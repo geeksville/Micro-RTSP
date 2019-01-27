@@ -65,7 +65,7 @@ inline UDPSOCKET udpsocketcreate(unsigned short portNum)
 // TCP sending
 inline ssize_t socketsend(SOCKET sockfd, const void *buf, size_t len)
 {
-    printf("TCP send\n");
+    // printf("TCP send\n");
     return send(sockfd, buf, len, 0);
 }
 
