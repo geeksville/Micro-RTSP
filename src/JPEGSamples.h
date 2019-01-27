@@ -11,12 +11,8 @@
 #ifndef _JPEG_SAMPLES_H
 #define _JPEG_SAMPLES_H
 
-#define KJpegCh2ScanDataLen 56
-
-extern unsigned const char JpegScanDataCh2A[];
-extern unsigned const char JpegScanDataCh2B[];
-
+extern unsigned const char capture_jpg[];
 extern unsigned const char octo_jpg[];
-extern unsigned int octo_jpg_len;
+extern unsigned int octo_jpg_len, capture_jpg_len;
 
 #endif

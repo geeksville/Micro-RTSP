@@ -2,6 +2,8 @@
 
 #include "platglue.h"
 
+typedef unsigned const char *BufPtr;
+
 class CStreamer
 {
 public:
@@ -15,10 +17,10 @@ public:
     virtual void    streamImage() = 0; // send a new image to the client
 protected:
 
-    void    streamFrame(unsigned const char *data, int dataLen);
+    void    streamFrame(unsigned const char *data, uint32_t dataLen);
 
 private:
-    int    SendRtpPacket(unsigned const char *jpeg, int jpegLen, int fragmentOffset);// returns new fragmentOffset or 0 if finished with frame
+    int    SendRtpPacket(unsigned const char *jpeg, int jpegLen, int fragmentOffset, BufPtr quant0tbl = NULL, BufPtr quant1tbl = NULL);// returns new fragmentOffset or 0 if finished with frame
 
     UDPSOCKET m_RtpSocket;           // RTP socket for streaming RTP packets to client
     UDPSOCKET m_RtcpSocket;          // RTCP socket for sending/receiving RTCP packages
@@ -37,3 +39,13 @@ private:
     u_short m_width; // image data info
     u_short m_height;
 };
+
+
+
+// When JPEG is stored as a file it is wrapped in a container
+// This function fixes up the provided start ptr to point to the
+// actual JPEG stream data and returns the number of bytes skipped
+// returns true if the file seems to be valid jpeg
+// If quant tables can be found they will be stored in qtable0/1
+bool decodeJPEGfile(BufPtr *start, uint32_t *len, BufPtr *qtable0, BufPtr *qtable1);
+bool findJPEGheader(BufPtr *start, uint32_t *len, uint8_t marker);
