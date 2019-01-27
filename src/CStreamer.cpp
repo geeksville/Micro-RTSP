@@ -84,7 +84,7 @@ int CStreamer::SendRtpPacket(unsigned const char * jpeg, int jpegLen, int fragme
 
     int headerLen = 24; // Inlcuding jpeg header but not qant table header
     if(includeQuantTbl) { // we need a quant header - but only in first packet of the frame
-        printf("inserting quanttbl\n");
+        //printf("inserting quanttbl\n");
         RtpBuf[24] = 0; // MBZ
         RtpBuf[25] = 0; // 8 bit precision
         RtpBuf[26] = 0; // MSB of lentgh
