@@ -81,3 +81,31 @@ inline ssize_t udpsocketsend(UDPSOCKET sockfd, const void *buf, size_t len,
 
     return sendto(sockfd, buf, len, 0, (sockaddr *) &addr, sizeof(addr));
 }
+
+/**
+   Read from a socket with a timeout.
+
+   Return 0=socket was closed by client, -1=timeout, >0 number of bytes read
+ */
+inline int socketread(SOCKET sock, void *buf, size_t buflen, int timeoutmsec)
+{
+    // Use a timeout on our socket read to instead serve frames
+    struct timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = timeoutmsec * 1000; // send a new frame ever
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv);
+
+    int res = recv(sock,buf,buflen,0);
+    if(res > 0) {
+        return res;
+    }
+    else if(res == 0) {
+        return 0; // client dropped connection
+    }
+    else {
+        if (errno == EWOULDBLOCK || errno == EAGAIN)
+            return -1;
+        else
+            return 0; // unknown error, just claim client dropped it
+    };
+}

@@ -410,14 +410,8 @@ void CRtspSession::doIdle()
 
     int msecsPerFrame = 100;
 
-    // Use a timeout on our socket read to instead serve frames
-    struct timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = msecsPerFrame * 1000; // send a new frame ever
-    setsockopt(m_RtspClient, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv);
-
     memset(RecvBuf,0x00,sizeof(RecvBuf));
-    int res = recv(m_RtspClient,RecvBuf,sizeof(RecvBuf),0);
+    int res = socketread(m_RtspClient,RecvBuf,sizeof(RecvBuf), msecsPerFrame);
     if(res > 0) {
         // we filter away everything which seems not to be an RTSP command: O-ption, D-escribe, S-etup, P-lay, T-eardown
         if ((RecvBuf[0] == 'O') || (RecvBuf[0] == 'D') || (RecvBuf[0] == 'S') || (RecvBuf[0] == 'P') || (RecvBuf[0] == 'T'))
@@ -434,30 +428,23 @@ void CRtspSession::doIdle()
         m_stopped = true;
     }
     else if(res < 0) {
-        if (errno == EWOULDBLOCK || errno == EAGAIN) {
-            // Timeout on read
+        // Timeout on read
 
-            // Send a frame
-            if (m_streaming) {
-                printf("serving a frame\n");
+        // Send a frame
+        if (m_streaming) {
+            printf("serving a frame\n");
 
-                if(showBig) {
-                    BufPtr bytes = octo_jpg;
-                    unsigned skipped = decodeJPEGfile(&bytes);
-                    m_Streamer->StreamImage(bytes, octo_jpg_len - skipped);
-                }
-                else {
-                    unsigned char  * Samples2[2] = { JpegScanDataCh2A, JpegScanDataCh2B };
-
-                    m_Streamer->StreamImage(Samples2[frameoffset], KJpegCh2ScanDataLen);
-                    frameoffset = (frameoffset + 1) % 2;
-                }
+            if(showBig) {
+                BufPtr bytes = octo_jpg;
+                unsigned skipped = decodeJPEGfile(&bytes);
+                m_Streamer->StreamImage(bytes, octo_jpg_len - skipped);
             }
-        }
-        else {
-            // Unexpected error
-            printf("Unexpected error %d, closing stream\n", res);
-            m_stopped = true;
+            else {
+                unsigned char  * Samples2[2] = { JpegScanDataCh2A, JpegScanDataCh2B };
+
+                m_Streamer->StreamImage(Samples2[frameoffset], KJpegCh2ScanDataLen);
+                frameoffset = (frameoffset + 1) % 2;
+            }
         }
     }
 
