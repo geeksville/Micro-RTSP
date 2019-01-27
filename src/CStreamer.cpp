@@ -262,7 +262,7 @@ bool decodeJPEGfile(BufPtr *start, uint32_t *len, BufPtr *qtable0, BufPtr *qtabl
 
     // endlen must now be the # of bytes between the start of our scan and
     // the end marker, tell the caller to ignore bytes afterwards
-    // *len = endlen; FIXME why doesn't this work?
+    *len = endmarkerptr - *start;
 
     return true;
 }
