@@ -434,7 +434,7 @@ void CRtspSession::doIdle()
 
         // Send a frame
         if (m_streaming) {
-            printf("serving a frame\n");
+            // printf("serving a frame\n");
 
             if(showBig) {
                 BufPtr bytes = octo_jpg;
