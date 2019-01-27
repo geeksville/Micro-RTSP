@@ -77,7 +77,7 @@ inline ssize_t udpsocketsend(UDPSOCKET sockfd, const void *buf, size_t len,
     addr.sin_family      = AF_INET;
     addr.sin_addr.s_addr = destaddr;
     addr.sin_port = htons(destport);
-    printf("UDP send to 0x%0x:%0x\n", destaddr, destport);
+    //printf("UDP send to 0x%0x:%0x\n", destaddr, destport);
 
     return sendto(sockfd, buf, len, 0, (sockaddr *) &addr, sizeof(addr));
 }

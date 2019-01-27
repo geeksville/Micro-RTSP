@@ -138,7 +138,7 @@ u_short CStreamer::GetRtcpServerPort()
     return m_RtcpServerPort;
 };
 
-void CStreamer::StreamImage(unsigned const char *data, int dataLen)
+void CStreamer::streamFrame(unsigned const char *data, int dataLen)
 {
     int offset = 0;
 

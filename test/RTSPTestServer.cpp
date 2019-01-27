@@ -1,17 +1,17 @@
 #include "platglue.h"
 
-#include "CStreamer.h"
+#include "SimStreamer.h"
 #include "CRtspSession.h"
 
 #include <assert.h>
 
 
-void workerThread(SOCKET Client)
+void workerThread(SOCKET s)
 {
-    bool showBig = true;
-    CStreamer Streamer(Client, showBig ? 640 : 64, showBig ? 480 : 48);                     // our streamer for UDP/TCP based RTP transport
+    bool showBig = false;
+    SimStreamer streamer(s, showBig);                     // our streamer for UDP/TCP based RTP transport
 
-    CRtspSession rtsp(Client,&Streamer);     // our threads RTSP session and state
+    CRtspSession rtsp(s, &streamer);     // our threads RTSP session and state
 
     while (!rtsp.m_stopped)
     {

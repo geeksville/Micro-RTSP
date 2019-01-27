@@ -6,12 +6,16 @@ class CStreamer
 {
 public:
     CStreamer(SOCKET aClient, u_short width, u_short height);
-    ~CStreamer();
+    virtual ~CStreamer();
 
     void    InitTransport(u_short aRtpPort, u_short aRtcpPort, bool TCP);
     u_short GetRtpServerPort();
     u_short GetRtcpServerPort();
-    void    StreamImage(unsigned const char *data, int dataLen);
+
+    virtual void    streamImage() = 0; // send a new image to the client
+protected:
+
+    void    streamFrame(unsigned const char *data, int dataLen);
 
 private:
     int    SendRtpPacket(unsigned const char *jpeg, int jpegLen, int fragmentOffset);// returns new fragmentOffset or 0 if finished with frame
