@@ -28,7 +28,7 @@ CStreamer::~CStreamer()
     udpsocketclose(m_RtcpSocket);
 };
 
-int CStreamer::SendRtpPacket(unsigned char * jpeg, int jpegLen, int fragmentOffset)
+int CStreamer::SendRtpPacket(unsigned const char * jpeg, int jpegLen, int fragmentOffset)
 {
 #define KRtpHeaderSize 12           // size of the RTP header
 #define KJpegHeaderSize 8           // size of the special JPEG payload header
@@ -138,7 +138,7 @@ u_short CStreamer::GetRtcpServerPort()
     return m_RtcpServerPort;
 };
 
-void CStreamer::StreamImage(unsigned char *data, int dataLen)
+void CStreamer::StreamImage(unsigned const char *data, int dataLen)
 {
     int offset = 0;
 

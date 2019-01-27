@@ -13,10 +13,10 @@
 
 #define KJpegCh2ScanDataLen 56
 
-extern unsigned char JpegScanDataCh2A[];
-extern unsigned char JpegScanDataCh2B[];
+extern unsigned const char JpegScanDataCh2A[];
+extern unsigned const char JpegScanDataCh2B[];
 
-extern unsigned char octo_jpg[];
+extern unsigned const char octo_jpg[];
 extern unsigned int octo_jpg_len;
 
 #endif

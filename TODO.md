@@ -1,7 +1,10 @@
 * package as a library https://docs.platformio.org/en/latest/librarymanager/creating.html#library-creating-examples
 * push RTSP streams to other servers ( https://github.com/ant-media/Ant-Media-Server/wiki/Getting-Started )
-* test on a device
+* use device camera
 * split sim code from real code via inheritence
+* make stack larger so that the various scratch buffers (currently in bss) can be shared
+* cleanup code to a less ugly unified coding standard
+* support multiple simultaneous clients on the device
 
 DONE:
 * serve real jpegs (use correct quantization & huffman tables)

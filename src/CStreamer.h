@@ -11,10 +11,10 @@ public:
     void    InitTransport(u_short aRtpPort, u_short aRtcpPort, bool TCP);
     u_short GetRtpServerPort();
     u_short GetRtcpServerPort();
-    void    StreamImage(unsigned char *data, int dataLen);
+    void    StreamImage(unsigned const char *data, int dataLen);
 
 private:
-    int    SendRtpPacket(unsigned char *jpeg, int jpegLen, int fragmentOffset);// returns new fragmentOffset or 0 if finished with frame
+    int    SendRtpPacket(unsigned const char *jpeg, int jpegLen, int fragmentOffset);// returns new fragmentOffset or 0 if finished with frame
 
     UDPSOCKET m_RtpSocket;           // RTP socket for streaming RTP packets to client
     UDPSOCKET m_RtcpSocket;          // RTCP socket for sending/receiving RTCP packages

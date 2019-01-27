@@ -367,14 +367,14 @@ int CRtspSession::GetStreamID()
     return m_StreamID;
 };
 
-typedef unsigned char *BufPtr;
+typedef unsigned const char *BufPtr;
 
 // When JPEG is stored as a file it is wrapped in a container
 // This function fixes up the provided start ptr to point to the
 // actual JPEG stream data and returns the number of bytes skipped
 unsigned decodeJPEGfile(BufPtr *start) {
     // per https://en.wikipedia.org/wiki/JPEG_File_Interchange_Format
-    unsigned char *bytes = *start;
+    unsigned const char *bytes = *start;
 
     assert(bytes[0] == 0xff);
     assert(bytes[1] == 0xd8);
@@ -442,7 +442,7 @@ void CRtspSession::doIdle()
                 m_Streamer->StreamImage(bytes, octo_jpg_len - skipped);
             }
             else {
-                unsigned char  * Samples2[2] = { JpegScanDataCh2A, JpegScanDataCh2B };
+                unsigned const char  * Samples2[2] = { JpegScanDataCh2A, JpegScanDataCh2B };
 
                 m_Streamer->StreamImage(Samples2[frameoffset], KJpegCh2ScanDataLen);
                 frameoffset = (frameoffset + 1) % 2;
