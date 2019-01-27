@@ -19,8 +19,8 @@ private:
     UDPSOCKET m_RtpSocket;           // RTP socket for streaming RTP packets to client
     UDPSOCKET m_RtcpSocket;          // RTCP socket for sending/receiving RTCP packages
 
-    IPPORT m_RtpClientPort;      // RTP receiver port on client
-    IPPORT m_RtcpClientPort;     // RTCP receiver port on client
+    uint16_t m_RtpClientPort;      // RTP receiver port on client (in host byte order!)
+    uint16_t m_RtcpClientPort;     // RTCP receiver port on client (in host byte order!)
     IPPORT m_RtpServerPort;      // RTP sender port on server
     IPPORT m_RtcpServerPort;     // RTCP sender port on server
 

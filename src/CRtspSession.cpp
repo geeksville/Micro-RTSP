@@ -1,7 +1,8 @@
 #include "CRtspSession.h"
-
+#include "JPEGSamples.h"
 #include <stdio.h>
 #include <time.h>
+#include <assert.h>
 
 CRtspSession::CRtspSession(SOCKET aRtspClient, CStreamer * aStreamer) : m_RtspClient(aRtspClient),m_Streamer(aStreamer)
 {
@@ -13,6 +14,8 @@ CRtspSession::CRtspSession(SOCKET aRtspClient, CStreamer * aStreamer) : m_RtspCl
     m_ClientRTPPort  =  0;
     m_ClientRTCPPort =  0;
     m_TcpTransport   =  false;
+    m_streaming = false;
+    m_stopped = false;
 };
 
 CRtspSession::~CRtspSession()
@@ -361,3 +364,103 @@ int CRtspSession::GetStreamID()
 {
     return m_StreamID;
 };
+
+typedef unsigned char *BufPtr;
+
+// When JPEG is stored as a file it is wrapped in a container
+// This function fixes up the provided start ptr to point to the
+// actual JPEG stream data and returns the number of bytes skipped
+unsigned decodeJPEGfile(BufPtr *start) {
+    // per https://en.wikipedia.org/wiki/JPEG_File_Interchange_Format
+    unsigned char *bytes = *start;
+
+    assert(bytes[0] == 0xff);
+    assert(bytes[1] == 0xd8);
+
+    // kinda skanky, will break if unlucky and the headers inxlucde 0xffda
+    // might fall off array if jpeg is invalid
+    while(true) {
+        while(*bytes++ != 0xff)
+            ;
+        if(*bytes++ == 0xda) {
+            unsigned skipped = bytes - *start;
+            // printf("first byte %x, skipped %d\n", *bytes, skipped);
+
+            *start = bytes;
+            return skipped;
+        }
+    }
+
+    // if we have to properly parse headers
+    // unsigned len = bytes[2] * 256 + bytes[3] - 2;
+    // *start = bytes + 4;
+}
+
+/**
+   Read from our socket, parsing commands as possible.  Broadcast frames as needed
+ */
+void CRtspSession::doIdle()
+{
+    if(m_stopped)
+        return; // Already closed down
+
+    bool showBig = true;
+    char RecvBuf[10000];                            // receiver buffer
+    static int frameoffset = 0;
+
+    int msecsPerFrame = 100;
+
+    // Use a timeout on our socket read to instead serve frames
+    struct timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = msecsPerFrame * 1000; // send a new frame ever
+    setsockopt(m_RtspClient, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv);
+
+    memset(RecvBuf,0x00,sizeof(RecvBuf));
+    int res = recv(m_RtspClient,RecvBuf,sizeof(RecvBuf),0);
+    if(res > 0) {
+        // we filter away everything which seems not to be an RTSP command: O-ption, D-escribe, S-etup, P-lay, T-eardown
+        if ((RecvBuf[0] == 'O') || (RecvBuf[0] == 'D') || (RecvBuf[0] == 'S') || (RecvBuf[0] == 'P') || (RecvBuf[0] == 'T'))
+        {
+            RTSP_CMD_TYPES C = Handle_RtspRequest(RecvBuf,res);
+            if (C == RTSP_PLAY)
+                m_streaming = true;
+            else if (C == RTSP_TEARDOWN)
+                m_stopped = true;
+        }
+    }
+    else if(res == 0) {
+        printf("client closed socket, exiting\n");
+        m_stopped = true;
+    }
+    else if(res < 0) {
+        if (errno == EWOULDBLOCK || errno == EAGAIN) {
+            // Timeout on read
+
+            // Send a frame
+            if (m_streaming) {
+                printf("serving a frame\n");
+
+                if(showBig) {
+                    BufPtr bytes = octo_jpg;
+                    unsigned skipped = decodeJPEGfile(&bytes);
+                    m_Streamer->StreamImage(bytes, octo_jpg_len - skipped);
+                }
+                else {
+                    unsigned char  * Samples2[2] = { JpegScanDataCh2A, JpegScanDataCh2B };
+
+                    m_Streamer->StreamImage(Samples2[frameoffset], KJpegCh2ScanDataLen);
+                    frameoffset = (frameoffset + 1) % 2;
+                }
+            }
+        }
+        else {
+            // Unexpected error
+            printf("Unexpected error %d, closing stream\n", res);
+            m_stopped = true;
+        }
+    }
+
+    if(m_stopped) // We just became stopped
+        closesocket(m_RtspClient);
+}

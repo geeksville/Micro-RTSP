@@ -27,6 +27,14 @@ public:
     RTSP_CMD_TYPES Handle_RtspRequest(char const * aRequest, unsigned aRequestSize);
     int            GetStreamID();
 
+    /**
+       Read from our socket, parsing commands as possible.  Broadcast frames as needed
+     */
+    void doIdle();
+
+    bool m_streaming;
+    bool m_stopped;
+
 private:
     void Init();
     bool ParseRtspRequest(char const * aRequest, unsigned aRequestSize);

@@ -65,17 +65,19 @@ inline UDPSOCKET udpsocketcreate(unsigned short portNum)
 // TCP sending
 inline ssize_t socketsend(SOCKET sockfd, const void *buf, size_t len)
 {
+    printf("TCP send\n");
     return send(sockfd, buf, len, 0);
 }
 
 inline ssize_t udpsocketsend(UDPSOCKET sockfd, const void *buf, size_t len,
-                             IPADDRESS destaddr, IPPORT destport)
+                             IPADDRESS destaddr, uint16_t destport)
 {
     sockaddr_in addr;
 
     addr.sin_family      = AF_INET;
     addr.sin_addr.s_addr = destaddr;
-    addr.sin_port = destport;
+    addr.sin_port = htons(destport);
+    printf("UDP send to 0x%0x:%0x\n", destaddr, destport);
 
     return sendto(sockfd, buf, len, 0, (sockaddr *) &addr, sizeof(addr));
 }
