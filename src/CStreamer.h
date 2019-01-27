@@ -16,16 +16,16 @@ public:
 private:
     int    SendRtpPacket(unsigned char *jpeg, int jpegLen, int fragmentOffset);// returns new fragmentOffset or 0 if finished with frame
 
-    SOCKET m_RtpSocket;           // RTP socket for streaming RTP packets to client
-    SOCKET m_RtcpSocket;          // RTCP socket for sending/receiving RTCP packages
+    UDPSOCKET m_RtpSocket;           // RTP socket for streaming RTP packets to client
+    UDPSOCKET m_RtcpSocket;          // RTCP socket for sending/receiving RTCP packages
 
-    u_short m_RtpClientPort;      // RTP receiver port on client
-    u_short m_RtcpClientPort;     // RTCP receiver port on client
-    u_short m_RtpServerPort;      // RTP sender port on server
-    u_short m_RtcpServerPort;     // RTCP sender port on server
+    IPPORT m_RtpClientPort;      // RTP receiver port on client
+    IPPORT m_RtcpClientPort;     // RTCP receiver port on client
+    IPPORT m_RtpServerPort;      // RTP sender port on server
+    IPPORT m_RtcpServerPort;     // RTCP sender port on server
 
     u_short m_SequenceNumber;
-    DWORD m_Timestamp;
+    uint32_t m_Timestamp;
     int m_SendIdx;
     bool m_TCPTransport;
     SOCKET m_Client;

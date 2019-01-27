@@ -7,7 +7,7 @@ CRtspSession::CRtspSession(SOCKET aRtspClient, CStreamer * aStreamer) : m_RtspCl
 {
     Init();
 
-    m_RtspSessionID  = random();         // create a session ID
+    m_RtspSessionID  = getRandom();         // create a session ID
     m_RtspSessionID |= 0x80000000;
     m_StreamID       = -1;
     m_ClientRTPPort  =  0;
@@ -229,11 +229,11 @@ void CRtspSession::Handle_RtspOPTION()
 {
     char Response[1024];
 
-    _snprintf(Response,sizeof(Response),
-              "RTSP/1.0 200 OK\r\nCSeq: %s\r\n"
-              "Public: DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE\r\n\r\n",m_CSeq);
+    snprintf(Response,sizeof(Response),
+             "RTSP/1.0 200 OK\r\nCSeq: %s\r\n"
+             "Public: DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE\r\n\r\n",m_CSeq);
 
-    send(m_RtspClient,Response,strlen(Response),0);
+    socketsend(m_RtspClient,Response,strlen(Response));
 }
 
 void CRtspSession::Handle_RtspDESCRIBE()
@@ -248,12 +248,12 @@ void CRtspSession::Handle_RtspDESCRIBE()
     if ((strcmp(m_URLPreSuffix,"mjpeg") == 0) && (strcmp(m_URLSuffix,"2") == 0)) m_StreamID = 1;
     if (m_StreamID == -1)
     {   // Stream not available
-        _snprintf(Response,sizeof(Response),
-                  "RTSP/1.0 404 Stream Not Found\r\nCSeq: %s\r\n%s\r\n",
-                  m_CSeq,
-                  DateHeader());
+        snprintf(Response,sizeof(Response),
+                 "RTSP/1.0 404 Stream Not Found\r\nCSeq: %s\r\n%s\r\n",
+                 m_CSeq,
+                 DateHeader());
 
-        send(m_RtspClient,Response,strlen(Response),0);
+        socketsend(m_RtspClient,Response,strlen(Response));
         return;
     };
 
@@ -264,40 +264,40 @@ void CRtspSession::Handle_RtspDESCRIBE()
     ColonPtr = strstr(OBuf,":");
     if (ColonPtr != nullptr) ColonPtr[0] = 0x00;
 
-    _snprintf(SDPBuf,sizeof(SDPBuf),
-              "v=0\r\n"
-              "o=- %d 1 IN IP4 %s\r\n"
-              "s=\r\n"
-              "t=0 0\r\n"                                      // start / stop - 0 -> unbounded and permanent session
-              "m=video 0 RTP/AVP 26\r\n"                       // currently we just handle UDP sessions
-              // "a=x-dimensions: 640,480\r\n"
-              "c=IN IP4 0.0.0.0\r\n",
-              rand(),
-              OBuf);
+    snprintf(SDPBuf,sizeof(SDPBuf),
+             "v=0\r\n"
+             "o=- %d 1 IN IP4 %s\r\n"
+             "s=\r\n"
+             "t=0 0\r\n"                                       // start / stop - 0 -> unbounded and permanent session
+             "m=video 0 RTP/AVP 26\r\n"                        // currently we just handle UDP sessions
+             // "a=x-dimensions: 640,480\r\n"
+             "c=IN IP4 0.0.0.0\r\n",
+             rand(),
+             OBuf);
     char StreamName[64];
     switch (m_StreamID)
     {
     case 0: strcpy(StreamName,"mjpeg/1"); break;
     case 1: strcpy(StreamName,"mjpeg/2"); break;
     };
-    _snprintf(URLBuf,sizeof(URLBuf),
-              "rtsp://%s/%s",
-              m_URLHostPort,
-              StreamName);
-    _snprintf(Response,sizeof(Response),
-              "RTSP/1.0 200 OK\r\nCSeq: %s\r\n"
-              "%s\r\n"
-              "Content-Base: %s/\r\n"
-              "Content-Type: application/sdp\r\n"
-              "Content-Length: %d\r\n\r\n"
-              "%s",
-              m_CSeq,
-              DateHeader(),
-              URLBuf,
-              (int) strlen(SDPBuf),
-              SDPBuf);
+    snprintf(URLBuf,sizeof(URLBuf),
+             "rtsp://%s/%s",
+             m_URLHostPort,
+             StreamName);
+    snprintf(Response,sizeof(Response),
+             "RTSP/1.0 200 OK\r\nCSeq: %s\r\n"
+             "%s\r\n"
+             "Content-Base: %s/\r\n"
+             "Content-Type: application/sdp\r\n"
+             "Content-Length: %d\r\n\r\n"
+             "%s",
+             m_CSeq,
+             DateHeader(),
+             URLBuf,
+             (int) strlen(SDPBuf),
+             SDPBuf);
 
-    send(m_RtspClient,Response,strlen(Response),0);
+    socketsend(m_RtspClient,Response,strlen(Response));
 }
 
 void CRtspSession::Handle_RtspSETUP()
@@ -310,25 +310,25 @@ void CRtspSession::Handle_RtspSETUP()
 
     // simulate SETUP server response
     if (m_TcpTransport)
-        _snprintf(Transport,sizeof(Transport),"RTP/AVP/TCP;unicast;interleaved=0-1");
+        snprintf(Transport,sizeof(Transport),"RTP/AVP/TCP;unicast;interleaved=0-1");
     else
-        _snprintf(Transport,sizeof(Transport),
-                  "RTP/AVP;unicast;destination=127.0.0.1;source=127.0.0.1;client_port=%i-%i;server_port=%i-%i",
-                  m_ClientRTPPort,
-                  m_ClientRTCPPort,
-                  m_Streamer->GetRtpServerPort(),
-                  m_Streamer->GetRtcpServerPort());
-    _snprintf(Response,sizeof(Response),
-              "RTSP/1.0 200 OK\r\nCSeq: %s\r\n"
-              "%s\r\n"
-              "Transport: %s\r\n"
-              "Session: %i\r\n\r\n",
-              m_CSeq,
-              DateHeader(),
-              Transport,
-              m_RtspSessionID);
+        snprintf(Transport,sizeof(Transport),
+                 "RTP/AVP;unicast;destination=127.0.0.1;source=127.0.0.1;client_port=%i-%i;server_port=%i-%i",
+                 m_ClientRTPPort,
+                 m_ClientRTCPPort,
+                 m_Streamer->GetRtpServerPort(),
+                 m_Streamer->GetRtcpServerPort());
+    snprintf(Response,sizeof(Response),
+             "RTSP/1.0 200 OK\r\nCSeq: %s\r\n"
+             "%s\r\n"
+             "Transport: %s\r\n"
+             "Session: %i\r\n\r\n",
+             m_CSeq,
+             DateHeader(),
+             Transport,
+             m_RtspSessionID);
 
-    send(m_RtspClient,Response,strlen(Response),0);
+    socketsend(m_RtspClient,Response,strlen(Response));
 }
 
 void CRtspSession::Handle_RtspPLAY()
@@ -336,17 +336,17 @@ void CRtspSession::Handle_RtspPLAY()
     char Response[1024];
 
     // simulate SETUP server response
-    _snprintf(Response,sizeof(Response),
-              "RTSP/1.0 200 OK\r\nCSeq: %s\r\n"
-              "%s\r\n"
-              "Range: npt=0.000-\r\n"
-              "Session: %i\r\n"
-              "RTP-Info: url=rtsp://127.0.0.1:8554/mjpeg/1/track1\r\n\r\n",
-              m_CSeq,
-              DateHeader(),
-              m_RtspSessionID);
+    snprintf(Response,sizeof(Response),
+             "RTSP/1.0 200 OK\r\nCSeq: %s\r\n"
+             "%s\r\n"
+             "Range: npt=0.000-\r\n"
+             "Session: %i\r\n"
+             "RTP-Info: url=rtsp://127.0.0.1:8554/mjpeg/1/track1\r\n\r\n",
+             m_CSeq,
+             DateHeader(),
+             m_RtspSessionID);
 
-    send(m_RtspClient,Response,strlen(Response),0);
+    socketsend(m_RtspClient,Response,strlen(Response));
 }
 
 char const * CRtspSession::DateHeader()

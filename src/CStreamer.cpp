@@ -14,14 +14,17 @@ CStreamer::CStreamer(SOCKET aClient, u_short width, u_short height) : m_Client(a
     m_SendIdx        = 0;
     m_TCPTransport   = false;
 
+    m_RtpSocket = NULLSOCKET;
+    m_RtcpSocket = NULLSOCKET;
+
     m_width = width;
     m_height = height;
 };
 
 CStreamer::~CStreamer()
 {
-    closesocket(m_RtpSocket);
-    closesocket(m_RtcpSocket);
+    udpsocketclose(m_RtpSocket);
+    udpsocketclose(m_RtcpSocket);
 };
 
 int CStreamer::SendRtpPacket(unsigned char * jpeg, int jpegLen, int fragmentOffset)
@@ -37,14 +40,7 @@ int CStreamer::SendRtpPacket(unsigned char * jpeg, int jpegLen, int fragmentOffs
     bool isLastFragment = (fragmentOffset + fragmentLen) == jpegLen;
 
     char RtpBuf[2048];
-    sockaddr_in RecvAddr;
-    socklen_t RecvLen = sizeof(RecvAddr);
     int RtpPacketSize = fragmentLen + KRtpHeaderSize + KJpegHeaderSize;
-
-    // get client address for UDP transport
-    getpeername(m_Client,(struct sockaddr*)&RecvAddr,&RecvLen);
-    RecvAddr.sin_family = AF_INET;
-    RecvAddr.sin_port   = htons(m_RtpClientPort);
 
     memset(RtpBuf,0x00,sizeof(RtpBuf));
     // Prepare the first 4 byte of the packet. This is the Rtp over Rtsp header in case of TCP based transport
@@ -88,36 +84,34 @@ int CStreamer::SendRtpPacket(unsigned char * jpeg, int jpegLen, int fragmentOffs
 
     m_SequenceNumber++;                              // prepare the packet counter for the next packet
 
+    IPADDRESS otherip;
+    IPPORT otherport;
+    socketpeeraddr(m_Client, &otherip, &otherport);
+
     // RTP marker bit must be set on last fragment
     if (m_TCPTransport) // RTP over RTSP - we send the buffer + 4 byte additional header
-        send(m_Client,RtpBuf,RtpPacketSize + 4,0);
+        socketsend(m_Client,RtpBuf,RtpPacketSize + 4);
     else                // UDP - we send just the buffer by skipping the 4 byte RTP over RTSP header
-        sendto(m_RtpSocket,&RtpBuf[4],RtpPacketSize,0,(SOCKADDR *) &RecvAddr,sizeof(RecvAddr));
+        udpsocketsend(m_RtpSocket,&RtpBuf[4],RtpPacketSize, otherip, m_RtpClientPort);
 
     return isLastFragment ? 0 : fragmentOffset;
 };
 
 void CStreamer::InitTransport(u_short aRtpPort, u_short aRtcpPort, bool TCP)
 {
-    sockaddr_in Server;
-
     m_RtpClientPort  = aRtpPort;
     m_RtcpClientPort = aRtcpPort;
     m_TCPTransport   = TCP;
 
     if (!m_TCPTransport)
     {   // allocate port pairs for RTP/RTCP ports in UDP transport mode
-        Server.sin_family      = AF_INET;
-        Server.sin_addr.s_addr = INADDR_ANY;
         for (u_short P = 6970; P < 0xFFFE; P += 2)
         {
-            m_RtpSocket     = socket(AF_INET, SOCK_DGRAM, 0);
-            Server.sin_port = htons(P);
-            if (bind(m_RtpSocket,(sockaddr*)&Server,sizeof(Server)) == 0)
+            m_RtpSocket     = udpsocketcreate(P);
+            if (m_RtpSocket)
             {   // Rtp socket was bound successfully. Lets try to bind the consecutive Rtsp socket
-                m_RtcpSocket = socket(AF_INET, SOCK_DGRAM, 0);
-                Server.sin_port = htons(P + 1);
-                if (bind(m_RtcpSocket,(sockaddr*)&Server,sizeof(Server)) == 0)
+                m_RtcpSocket = udpsocketcreate(P + 1);
+                if (m_RtcpSocket)
                 {
                     m_RtpServerPort  = P;
                     m_RtcpServerPort = P+1;
@@ -125,11 +119,10 @@ void CStreamer::InitTransport(u_short aRtpPort, u_short aRtcpPort, bool TCP)
                 }
                 else
                 {
-                    closesocket(m_RtpSocket);
-                    closesocket(m_RtcpSocket);
+                    udpsocketclose(m_RtpSocket);
+                    udpsocketclose(m_RtcpSocket);
                 };
             }
-            else closesocket(m_RtpSocket);
         };
     };
 };

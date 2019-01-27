@@ -42,8 +42,8 @@ private:
     int m_RtspSessionID;
     SOCKET m_RtspClient;                                      // RTSP socket of that session
     int m_StreamID;                                           // number of simulated stream of that session
-    u_short m_ClientRTPPort;                                  // client port for UDP based RTP transport
-    u_short m_ClientRTCPPort;                                 // client port for UDP based RTCP transport
+    IPPORT m_ClientRTPPort;                                  // client port for UDP based RTP transport
+    IPPORT m_ClientRTCPPort;                                 // client port for UDP based RTCP transport
     bool m_TcpTransport;                                      // if Tcp based streaming was activated
     CStreamer    * m_Streamer;                                // the UDP or TCP streamer of that session
 

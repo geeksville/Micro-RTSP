@@ -3,7 +3,7 @@
 This is a small library which can be used to serve up RTSP streams from
 resource constrained MCUs.
 
-Copyright 2018 S. Kevin Hester-Chow, Licensed GNU GENERAL PUBLIC LICENSE under the Version 3
+Copyright 2018 S. Kevin Hester-Chow, Licensed under the GNU GENERAL PUBLIC LICENSE Version 3
 
 # Credits
 
