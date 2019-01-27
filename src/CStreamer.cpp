@@ -4,6 +4,7 @@
 
 CStreamer::CStreamer(SOCKET aClient, u_short width, u_short height) : m_Client(aClient)
 {
+    printf("Creating TSP streamer\n");
     m_RtpServerPort  = 0;
     m_RtcpServerPort = 0;
     m_RtpClientPort  = 0;
@@ -39,7 +40,7 @@ int CStreamer::SendRtpPacket(unsigned char * jpeg, int jpegLen, int fragmentOffs
 
     bool isLastFragment = (fragmentOffset + fragmentLen) == jpegLen;
 
-    char RtpBuf[2048];
+    static char RtpBuf[2048]; // Note: we assume single threaded, this large buf we keep off of the tiny stack
     int RtpPacketSize = fragmentLen + KRtpHeaderSize + KJpegHeaderSize;
 
     memset(RtpBuf,0x00,sizeof(RtpBuf));

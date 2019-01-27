@@ -87,7 +87,7 @@ inline ssize_t udpsocketsend(UDPSOCKET sockfd, const void *buf, size_t len,
 
    Return 0=socket was closed by client, -1=timeout, >0 number of bytes read
  */
-inline int socketread(SOCKET sock, void *buf, size_t buflen, int timeoutmsec)
+inline int socketread(SOCKET sock, char *buf, size_t buflen, int timeoutmsec)
 {
     // Use a timeout on our socket read to instead serve frames
     struct timeval tv;

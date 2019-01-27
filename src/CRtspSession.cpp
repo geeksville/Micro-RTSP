@@ -6,6 +6,7 @@
 
 CRtspSession::CRtspSession(SOCKET aRtspClient, CStreamer * aStreamer) : m_RtspClient(aRtspClient),m_Streamer(aStreamer)
 {
+    printf("Creating RTSP session\n");
     Init();
 
     m_RtspSessionID  = getRandom();         // create a session ID
@@ -20,6 +21,7 @@ CRtspSession::CRtspSession(SOCKET aRtspClient, CStreamer * aStreamer) : m_RtspCl
 
 CRtspSession::~CRtspSession()
 {
+    closesocket(m_RtspClient);
 };
 
 void CRtspSession::Init()
@@ -35,7 +37,7 @@ void CRtspSession::Init()
 bool CRtspSession::ParseRtspRequest(char const * aRequest, unsigned aRequestSize)
 {
     char CmdName[RTSP_PARAM_STRING_MAX];
-    char CurRequest[RTSP_BUFFER_SIZE];
+    static char CurRequest[RTSP_BUFFER_SIZE]; // Note: we assume single threaded, this large buf we keep off of the tiny stack
     unsigned CurRequestSize;
 
     Init();
@@ -45,7 +47,7 @@ bool CRtspSession::ParseRtspRequest(char const * aRequest, unsigned aRequestSize
     // check whether the request contains information about the RTP/RTCP UDP client ports (SETUP command)
     char * ClientPortPtr;
     char * TmpPtr;
-    char CP[1024];
+    static char CP[1024];
     char * pCP;
 
     ClientPortPtr = strstr(CurRequest,"client_port");
@@ -230,7 +232,7 @@ RTSP_CMD_TYPES CRtspSession::Handle_RtspRequest(char const * aRequest, unsigned 
 
 void CRtspSession::Handle_RtspOPTION()
 {
-    char Response[1024];
+    static char Response[1024]; // Note: we assume single threaded, this large buf we keep off of the tiny stack
 
     snprintf(Response,sizeof(Response),
              "RTSP/1.0 200 OK\r\nCSeq: %s\r\n"
@@ -241,9 +243,9 @@ void CRtspSession::Handle_RtspOPTION()
 
 void CRtspSession::Handle_RtspDESCRIBE()
 {
-    char Response[1024];
-    char SDPBuf[1024];
-    char URLBuf[1024];
+    static char Response[1024]; // Note: we assume single threaded, this large buf we keep off of the tiny stack
+    static char SDPBuf[1024];
+    static char URLBuf[1024];
 
     // check whether we know a stream with the URL which is requested
     m_StreamID = -1;        // invalid URL
@@ -261,7 +263,7 @@ void CRtspSession::Handle_RtspDESCRIBE()
     };
 
     // simulate DESCRIBE server response
-    char OBuf[256];
+    static char OBuf[256];
     char * ColonPtr;
     strcpy(OBuf,m_URLHostPort);
     ColonPtr = strstr(OBuf,":");
@@ -305,8 +307,8 @@ void CRtspSession::Handle_RtspDESCRIBE()
 
 void CRtspSession::Handle_RtspSETUP()
 {
-    char Response[1024];
-    char Transport[255];
+    static char Response[1024];
+    static char Transport[255];
 
     // init RTP streamer transport type (UDP or TCP) and ports for UDP transport
     m_Streamer->InitTransport(m_ClientRTPPort,m_ClientRTCPPort,m_TcpTransport);
@@ -336,7 +338,7 @@ void CRtspSession::Handle_RtspSETUP()
 
 void CRtspSession::Handle_RtspPLAY()
 {
-    char Response[1024];
+    static char Response[1024];
 
     // simulate SETUP server response
     snprintf(Response,sizeof(Response),
@@ -405,7 +407,7 @@ void CRtspSession::doIdle()
         return; // Already closed down
 
     bool showBig = true;
-    char RecvBuf[10000];                            // receiver buffer
+    static char RecvBuf[RTSP_BUFFER_SIZE];   // Note: we assume single threaded, this large buf we keep off of the tiny stack
     static int frameoffset = 0;
 
     int msecsPerFrame = 100;
@@ -447,7 +449,4 @@ void CRtspSession::doIdle()
             }
         }
     }
-
-    if(m_stopped) // We just became stopped
-        closesocket(m_RtspClient);
 }
