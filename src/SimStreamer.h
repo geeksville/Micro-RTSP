@@ -10,6 +10,6 @@ class SimStreamer : public CStreamer
 public:
     SimStreamer(SOCKET aClient, bool showBig);
 
-    virtual void    streamImage();
+    virtual void    streamImage(uint32_t curMsec);
 };
 #endif

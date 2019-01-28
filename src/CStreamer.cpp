@@ -20,6 +20,7 @@ CStreamer::CStreamer(SOCKET aClient, u_short width, u_short height) : m_Client(a
 
     m_width = width;
     m_height = height;
+    m_prevMsec = 0;
 };
 
 CStreamer::~CStreamer()
@@ -161,8 +162,15 @@ u_short CStreamer::GetRtcpServerPort()
     return m_RtcpServerPort;
 };
 
-void CStreamer::streamFrame(unsigned const char *data, uint32_t dataLen)
+void CStreamer::streamFrame(unsigned const char *data, uint32_t dataLen, uint32_t curMsec)
 {
+    if(m_prevMsec == 0) // first frame init our timestamp
+        m_prevMsec = curMsec;
+
+    // compute deltat (being careful to handle clock rollover with a little lie)
+    uint32_t deltams = (curMsec >= m_prevMsec) ? curMsec - m_prevMsec : 100;
+    m_prevMsec = curMsec;
+
     // locate quant tables if possible
     BufPtr qtable0, qtable1;
 
@@ -177,10 +185,8 @@ void CStreamer::streamFrame(unsigned const char *data, uint32_t dataLen)
     } while(offset != 0);
 
     // Increment ONLY after a full frame
-    int units = 90000; // Hz per RFC 2435
-    int framerate = 10;
-
-    m_Timestamp += (units / framerate);                             // fixed timestamp increment for a frame rate of 25fps
+    uint32_t units = 90000; // Hz per RFC 2435
+    m_Timestamp += (units * deltams / 1000);                             // fixed timestamp increment for a frame rate of 25fps
 
     m_SendIdx++;
     if (m_SendIdx > 1) m_SendIdx = 0;

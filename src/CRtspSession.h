@@ -37,7 +37,7 @@ public:
     /**
        broadcast a current frame
      */
-    void broadcastCurrentFrame();
+    void broadcastCurrentFrame(uint32_t curMsec);
 
     bool m_streaming;
     bool m_stopped;

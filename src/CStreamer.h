@@ -14,10 +14,10 @@ public:
     u_short GetRtpServerPort();
     u_short GetRtcpServerPort();
 
-    virtual void    streamImage() = 0; // send a new image to the client
+    virtual void    streamImage(uint32_t curMsec) = 0; // send a new image to the client
 protected:
 
-    void    streamFrame(unsigned const char *data, uint32_t dataLen);
+    void    streamFrame(unsigned const char *data, uint32_t dataLen, uint32_t curMsec);
 
 private:
     int    SendRtpPacket(unsigned const char *jpeg, int jpegLen, int fragmentOffset, BufPtr quant0tbl = NULL, BufPtr quant1tbl = NULL);// returns new fragmentOffset or 0 if finished with frame
@@ -35,6 +35,7 @@ private:
     int m_SendIdx;
     bool m_TCPTransport;
     SOCKET m_Client;
+    uint32_t m_prevMsec;
 
     u_short m_width; // image data info
     u_short m_height;

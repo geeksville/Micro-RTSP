@@ -4,6 +4,7 @@
 #include "CRtspSession.h"
 #include "JPEGSamples.h"
 #include <assert.h>
+#include <sys/time.h>
 
 // From RFC2435 generates standard quantization tables
 
@@ -114,9 +115,13 @@ void workerThread(SOCKET s)
 
     while (!rtsp.m_stopped)
     {
-        uint32_t timeout = 100;
-        if(!rtsp.handleRequests(timeout))
-            rtsp.broadcastCurrentFrame();
+        uint32_t timeout = 400;
+        if(!rtsp.handleRequests(timeout)) {
+            struct timeval now;
+            gettimeofday(&now, NULL); // crufty msecish timer
+            uint32_t msec = now.tv_sec * 1000 + now.tv_usec / 1000;
+            rtsp.broadcastCurrentFrame(msec);
+        }
     }
 }
 
