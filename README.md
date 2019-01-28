@@ -14,7 +14,7 @@ This library will work standalone, but it is _super_ easy to use if your app is 
 Just "pio lib install Micro-RTSP" to pull the latest version from their library server.  If you want to use the OV2640
 camera support you'll need to be targeting the espressif32 platform in your project.
 
-See the (example platform.io app)[/examples].  It should build and run on virtually any of the $10
+See the [example platform.io app](/examples).  It should build and run on virtually any of the $10
 ESP32-CAM boards (such as M5CAM).  The relevant bit of the code is included below.  In short:
 1. Listen for a TCP connection on the RTSP port with accept()
 2. When a connection comes in, create a CRtspSession and OV2640Streamer camera streamer objects.
