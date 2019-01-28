@@ -1,0 +1,27 @@
+{
+  "name": "Micro-RTSP",
+  "keywords": "esp32, camera, esp32-cam, rtsp",
+  "description": "A small/efficient RTSP server for ESP32 and other micros",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/geeksville/Micro-RTSP.git"
+  },
+  "authors":
+  [
+    {
+      "name": "Kevin Hester",
+      "email": "kevinh@geeksville.com",
+      "url": "https://github.com/geeksville",
+      "maintainer": true
+    }
+  ],
+  "dependencies":
+  {
+    "name": "esp32-camera",
+    "version": "https://github.com/espressif/esp32-camera.git"
+  },
+  "version": "0.1.0",
+  "frameworks": "arduino",
+  "platforms": "*"
+}
