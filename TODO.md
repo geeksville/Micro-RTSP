@@ -1,6 +1,6 @@
+* package the ESP32-CAM stuff as a library so I can depend on it
 * package as a library https://docs.platformio.org/en/latest/librarymanager/creating.html#library-creating-examples
 * push RTSP streams to other servers ( https://github.com/ant-media/Ant-Media-Server/wiki/Getting-Started )
-* use device camera
 * make stack larger so that the various scratch buffers (currently in bss) can be shared
 * cleanup code to a less ugly unified coding standard
 * support multiple simultaneous clients on the device
@@ -13,3 +13,4 @@ DONE:
 * select a licence and put license into github
 * find cause of new mystery pause when starting up in sim mode
 * split sim code from real code via inheritence
+* use device camera
