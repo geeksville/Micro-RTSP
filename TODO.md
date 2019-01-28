@@ -1,5 +1,4 @@
-* add documentation
-* publish example app
+* add instructions for example app
 * push RTSP streams to other servers ( https://github.com/ant-media/Ant-Media-Server/wiki/Getting-Started )
 * make stack larger so that the various scratch buffers (currently in bss) can be shared
 * cleanup code to a less ugly unified coding standard
