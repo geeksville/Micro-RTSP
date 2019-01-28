@@ -14,8 +14,6 @@ This library will work standalone, but it is _super_ easy to use if your app is 
 Just "pio lib install Micro-RTSP" to pull the latest version from their library server.  If you want to use the OV2640
 camera support you'll need to be targeting the espressif32 platform in your project.
 
-<<<<<<< HEAD
-=======
 See the (example platform.io app)[/examples].  It should build and run on virtually any of the $10
 ESP32-CAM boards (such as M5CAM).  The relevant bit of the code is included below.  In short:
 1. Listen for a TCP connection on the RTSP port with accept()
@@ -65,7 +63,6 @@ void loop()
     }
 }
 ```
->>>>>>> just use camera code included in the ardunio libs
 ## Example posix/linux usage
 
 There is a small standalone example [here](/test/RTSPTestServer.cpp).  You can build it by following [these](/test/README.md) directions.  The usage of the two key classes (CRtspSession and SimStreamer) are very similar to to the ESP32 usage.
