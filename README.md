@@ -12,6 +12,10 @@ This library works for ESP32/arduino targets but also for most any posixish plat
 
 ## Example arduino/ESP32 usage
 
+This library will work standalone, but it is _super_ easy to use if your app is platform.io based.
+Just "pio lib install Micro-RTSP" to pull the latest version from their library server.  If you want to use the OV2640
+camera support you'll need to be targeting the espressif32 platform in your project.
+
 ## Example posix/linux usage
 
 There is a small standalone example [here](/test/RTSPTestServer.cpp).  You can build it by following [these](/test/README.md) directions.
