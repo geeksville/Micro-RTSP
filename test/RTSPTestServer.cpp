@@ -83,10 +83,11 @@ void findCameraQuant()
         return;
     }
     else {
-        printf("found quant table %x\n", bytes[2]);
+        printf("found quant table %x (len %d)\n", bytes[2], bytes[1]);
     }
     BufPtr qtable0 = bytes + 3; // 3 bytes of header skipped
 
+    nextJpegBlock(&bytes);
     if(!findJPEGheader(&bytes, &len, 0xdb)) {
         printf("error can't find quant table 1\n");
         return;
@@ -95,6 +96,8 @@ void findCameraQuant()
         printf("found quant table %x\n", bytes[2]);
     }
     BufPtr qtable1 = bytes + 3;
+
+    nextJpegBlock(&bytes);
 
     for(int q = 0; q < 128; q++) {
         uint8_t lqt[64], cqt[64];
