@@ -19,7 +19,7 @@
   "dependencies":
   {
     "name": "esp32-camera",
-    "version": "https://github.com/espressif/esp32-camera.git"
+    "version": ">0.0.1"
   },
   "version": "0.1.0",
   "frameworks": "arduino",

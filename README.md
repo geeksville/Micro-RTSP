@@ -8,9 +8,19 @@ I should have an initial version out by about Feb 5th...  That version will incl
 
 # Usage
 
+This library works for ESP32/arduino targets but also for most any posixish platform.
+
+## Example arduino/ESP32 usage
+
+## Example posix/linux usage
+
+There is a small standalone example [here](/test/RTSPTestServer.cpp).  You can build it by following [these](/test/README.md) directions.
+
 # Structure and design notes
 
 # Issues and sending pull requests
+
+Please report issues and send pull requests.  I'll happily reply. ;-)
 
 # Credits
 
