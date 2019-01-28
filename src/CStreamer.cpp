@@ -42,8 +42,9 @@ int CStreamer::SendRtpPacket(unsigned const char * jpeg, int jpegLen, int fragme
     bool isLastFragment = (fragmentOffset + fragmentLen) == jpegLen;
 
     // Do we have custom quant tables? If so include them per RFC
-    uint8_t q = (quant0tbl && quant0tbl) ? 255 : 0x5e;
-    bool includeQuantTbl = q >= 128 && fragmentOffset == 0;
+
+    bool includeQuantTbl = quant0tbl && quant1tbl && fragmentOffset == 0;
+    uint8_t q = includeQuantTbl ? 128 : 0x5e;
 
     static char RtpBuf[2048]; // Note: we assume single threaded, this large buf we keep off of the tiny stack
     int RtpPacketSize = fragmentLen + KRtpHeaderSize + KJpegHeaderSize + (includeQuantTbl ? (4 + 64 * 2) : 0);
@@ -320,10 +321,10 @@ bool decodeJPEGfile(BufPtr *start, uint32_t *len, BufPtr *qtable0, BufPtr *qtabl
     if(!findJPEGheader(start, len, 0xda))
         return false; // FAILED!
 
-    /* Skip the header bytes of the SOS marker FIXME why doesn't this work?
-       uint32_t soslen = (*start)[0] * 256 + (*start)[1];
-     * start -= soslen;
-     * len -= soslen; */
+    // Skip the header bytes of the SOS marker FIXME why doesn't this work?
+    uint32_t soslen = (*start)[0] * 256 + (*start)[1];
+    *start += soslen;
+    *len -= soslen;
 
     // start scanning the data portion of the scan to find the end marker
     BufPtr endmarkerptr = *start;
