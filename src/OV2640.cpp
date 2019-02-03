@@ -28,8 +28,11 @@ camera_config_t esp32cam_config {
     .ledc_timer = LEDC_TIMER_0,
     .ledc_channel = LEDC_CHANNEL_0,
     .pixel_format = PIXFORMAT_JPEG,
+    // .frame_size = FRAMESIZE_UXGA, // needs 234K of framebuffer space
+    // .frame_size = FRAMESIZE_SXGA, // needs 160K for framebuffer
+    // .frame_size = FRAMESIZE_XGA, // needs 96K or even smaller FRAMESIZE_SVGA - can work if using only 1 fb
     .frame_size = FRAMESIZE_SVGA,
-    .jpeg_quality = 12, //0-63 lower numbers are higher quality
+    .jpeg_quality = 12,               //0-63 lower numbers are higher quality
     .fb_count = 2 // if more than one i2s runs in continous mode.  Use only with jpeg
 };
 
@@ -82,18 +85,7 @@ framesize_t OV2640::getFrameSize(void)
 
 void OV2640::setFrameSize(framesize_t size)
 {
-    switch (size)
-    {
-    case FRAMESIZE_QQVGA:
-    case FRAMESIZE_QVGA:
-    case FRAMESIZE_VGA:
-    case FRAMESIZE_SVGA:
-        _cam_config.frame_size = size;
-        break;
-    default:
-        _cam_config.frame_size = FRAMESIZE_SVGA;
-        break;
-    }
+    _cam_config.frame_size = size;
 }
 
 pixformat_t OV2640::getPixelFormat(void)
