@@ -2,7 +2,7 @@
 
 #define TAG "OV2640"
 
-// definitions appropriate for the ESP32-CAM devboard (and clones)
+// definitions appropriate for the ESP32-CAM devboard (and most clones)
 camera_config_t esp32cam_config {
 
     .pin_pwdn = -1,
@@ -33,6 +33,36 @@ camera_config_t esp32cam_config {
     // .frame_size = FRAMESIZE_XGA, // needs 96K or even smaller FRAMESIZE_SVGA - can work if using only 1 fb
     .frame_size = FRAMESIZE_SVGA,
     .jpeg_quality = 12,               //0-63 lower numbers are higher quality
+    .fb_count = 2 // if more than one i2s runs in continous mode.  Use only with jpeg
+};
+
+camera_config_t esp32cam_ttgo_t_config {
+
+    .pin_pwdn = 26,
+    .pin_reset = -1,
+
+    .pin_xclk = 32,
+
+    .pin_sscb_sda = 13,
+    .pin_sscb_scl = 12,
+
+    .pin_d7 = 39,
+    .pin_d6 = 36,
+    .pin_d5 = 23,
+    .pin_d4 = 18,
+    .pin_d3 = 15,
+    .pin_d2 = 4,
+    .pin_d1 = 14,
+    .pin_d0 = 5,
+    .pin_vsync = 27,
+    .pin_href = 25,
+    .pin_pclk = 19,
+    .xclk_freq_hz = 20000000,
+    .ledc_timer = LEDC_TIMER_0,
+    .ledc_channel = LEDC_CHANNEL_0,
+    .pixel_format = PIXFORMAT_JPEG,
+    .frame_size = FRAMESIZE_SVGA,
+    .jpeg_quality = 12, //0-63 lower numbers are higher quality
     .fb_count = 2 // if more than one i2s runs in continous mode.  Use only with jpeg
 };
 
