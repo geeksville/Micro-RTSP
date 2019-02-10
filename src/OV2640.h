@@ -8,7 +8,7 @@
 #include "esp_attr.h"
 #include "esp_camera.h"
 
-extern camera_config_t esp32cam_config, esp32cam_aithinker_config, esp32_ttgocam_t_config;
+extern camera_config_t esp32cam_config, esp32cam_aithinker_config, esp32cam_ttgo_t_config;
 
 class OV2640
 {
