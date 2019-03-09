@@ -101,7 +101,34 @@ camera_config_t esp32cam_ttgo_t_config {
     .fb_count = 2 // if more than one i2s runs in continous mode.  Use only with jpeg
 };
 
+camera_config_t esp32cam_ttgo_t_plus_config {
+    .pin_pwdn = -1,
+    .pin_reset = -1,
 
+    .pin_xclk = 4,
+
+    .pin_sscb_sda = 18,
+    .pin_sscb_scl = 23,
+
+    .pin_d7 = 36,
+    .pin_d6 = 37,
+    .pin_d5 = 38,
+    .pin_d4 = 39,
+    .pin_d3 = 35,
+    .pin_d2 = 26,
+    .pin_d1 = 13,
+    .pin_d0 = 34,
+    .pin_vsync = 5,
+    .pin_href = 27,
+    .pin_pclk = 25,
+    .xclk_freq_hz = 20000000,
+    .ledc_timer = LEDC_TIMER_0,
+    .ledc_channel = LEDC_CHANNEL_0,
+    .pixel_format = PIXFORMAT_JPEG,
+    .frame_size = FRAMESIZE_SVGA,
+    .jpeg_quality = 12, //0-63 lower numbers are higher quality
+    .fb_count = 2 // if more than one i2s runs in continous mode.  Use only with jpeg
+};
 
 
 void OV2640::run(void)
