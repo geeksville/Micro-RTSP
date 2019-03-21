@@ -3,9 +3,9 @@
 #define TAG "OV2640"
 
 // definitions appropriate for the ESP32-CAM devboard (and most clones)
-camera_config_t esp32cam_config {
+camera_config_t esp32cam_config{
 
-    .pin_pwdn = -1,
+    .pin_pwdn = -1, // FIXME: on the TTGO T-Journal I think this is GPIO 0
     .pin_reset = 15,
 
     .pin_xclk = 27,
@@ -32,11 +32,11 @@ camera_config_t esp32cam_config {
     // .frame_size = FRAMESIZE_SXGA, // needs 160K for framebuffer
     // .frame_size = FRAMESIZE_XGA, // needs 96K or even smaller FRAMESIZE_SVGA - can work if using only 1 fb
     .frame_size = FRAMESIZE_SVGA,
-    .jpeg_quality = 12,               //0-63 lower numbers are higher quality
-    .fb_count = 2 // if more than one i2s runs in continous mode.  Use only with jpeg
+    .jpeg_quality = 12, //0-63 lower numbers are higher quality
+    .fb_count = 2       // if more than one i2s runs in continous mode.  Use only with jpeg
 };
 
-camera_config_t esp32cam_aithinker_config {
+camera_config_t esp32cam_aithinker_config{
 
     .pin_pwdn = 32,
     .pin_reset = -1,
@@ -67,11 +67,11 @@ camera_config_t esp32cam_aithinker_config {
     // .frame_size = FRAMESIZE_SXGA, // needs 160K for framebuffer
     // .frame_size = FRAMESIZE_XGA, // needs 96K or even smaller FRAMESIZE_SVGA - can work if using only 1 fb
     .frame_size = FRAMESIZE_SVGA,
-    .jpeg_quality = 12,               //0-63 lower numbers are higher quality
-    .fb_count = 2 // if more than one i2s runs in continous mode.  Use only with jpeg
+    .jpeg_quality = 12, //0-63 lower numbers are higher quality
+    .fb_count = 2       // if more than one i2s runs in continous mode.  Use only with jpeg
 };
 
-camera_config_t esp32cam_ttgo_t_config {
+camera_config_t esp32cam_ttgo_t_config{
 
     .pin_pwdn = 26,
     .pin_reset = -1,
@@ -98,15 +98,12 @@ camera_config_t esp32cam_ttgo_t_config {
     .pixel_format = PIXFORMAT_JPEG,
     .frame_size = FRAMESIZE_SVGA,
     .jpeg_quality = 12, //0-63 lower numbers are higher quality
-    .fb_count = 2 // if more than one i2s runs in continous mode.  Use only with jpeg
+    .fb_count = 2       // if more than one i2s runs in continous mode.  Use only with jpeg
 };
-
-
-
 
 void OV2640::run(void)
 {
-    if(fb)
+    if (fb)
         //return the frame buffer back to the driver for reuse
         esp_camera_fb_return(fb);
 
@@ -115,7 +112,7 @@ void OV2640::run(void)
 
 void OV2640::runIfNeeded(void)
 {
-    if(!fb)
+    if (!fb)
         run();
 }
 
@@ -134,12 +131,17 @@ int OV2640::getHeight(void)
 size_t OV2640::getSize(void)
 {
     runIfNeeded();
+    if (!fb)
+        return 0; // FIXME - this shouldn't be possible but apparently the new cam board returns null sometimes?
     return fb->len;
 }
 
 uint8_t *OV2640::getfb(void)
 {
     runIfNeeded();
+    if (!fb)
+        return NULL; // FIXME - this shouldn't be possible but apparently the new cam board returns null sometimes?
+
     return fb->buf;
 }
 
@@ -173,7 +175,6 @@ void OV2640::setPixelFormat(pixformat_t format)
         break;
     }
 }
-
 
 esp_err_t OV2640::init(camera_config_t config)
 {
