@@ -1,20 +1,29 @@
 #pragma once
 
 #include "platglue.h"
+#include "LinkedListElement.h"
 
 typedef unsigned const char *BufPtr;
 
 class CStreamer
 {
 public:
-    CStreamer(SOCKET aClient, u_short width, u_short height);
+    CStreamer(u_short width, u_short height);
     virtual ~CStreamer();
 
-    void    InitTransport(u_short aRtpPort, u_short aRtcpPort, bool TCP);
+    void addSession(WiFiClient& aClient);
+    LinkedListElement* getClientsListHead() { return &m_Clients; }
+
+    int anySessions() { return m_Clients.NotEmpty(); }
+
+    bool handleRequests(uint32_t readTimeoutMs);
+
     u_short GetRtpServerPort();
     u_short GetRtcpServerPort();
 
     virtual void    streamImage(uint32_t curMsec) = 0; // send a new image to the client
+    bool InitUdpTransport(void);
+    void ReleaseUdpTransport(void);
 protected:
 
     void    streamFrame(unsigned const char *data, uint32_t dataLen, uint32_t curMsec);
@@ -25,17 +34,17 @@ private:
     UDPSOCKET m_RtpSocket;           // RTP socket for streaming RTP packets to client
     UDPSOCKET m_RtcpSocket;          // RTCP socket for sending/receiving RTCP packages
 
-    uint16_t m_RtpClientPort;      // RTP receiver port on client (in host byte order!)
-    uint16_t m_RtcpClientPort;     // RTCP receiver port on client (in host byte order!)
     IPPORT m_RtpServerPort;      // RTP sender port on server
     IPPORT m_RtcpServerPort;     // RTCP sender port on server
 
     u_short m_SequenceNumber;
     uint32_t m_Timestamp;
     int m_SendIdx;
-    bool m_TCPTransport;
-    SOCKET m_Client;
+
+    LinkedListElement m_Clients;
     uint32_t m_prevMsec;
+
+    int m_udpRefCount;
 
     u_short m_width; // image data info
     u_short m_height;

@@ -8,7 +8,7 @@ class SimStreamer : public CStreamer
 {
     bool m_showBig;
 public:
-    SimStreamer(SOCKET aClient, bool showBig);
+    SimStreamer(bool showBig);
 
     virtual void    streamImage(uint32_t curMsec);
 };

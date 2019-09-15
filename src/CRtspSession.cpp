@@ -2,11 +2,14 @@
 #include <stdio.h>
 #include <time.h>
 
-CRtspSession::CRtspSession(SOCKET aRtspClient, CStreamer * aStreamer) : m_RtspClient(aRtspClient),m_Streamer(aStreamer)
+CRtspSession::CRtspSession(WiFiClient& aClient, CStreamer * aStreamer) : LinkedListElement(aStreamer->getClientsListHead()),
+ m_Client(aClient),
+ m_Streamer(aStreamer)
 {
     printf("Creating RTSP session\n");
     Init();
 
+    m_RtspClient = &m_Client;
     m_RtspSessionID  = getRandom();         // create a session ID
     m_RtspSessionID |= 0x80000000;
     m_StreamID       = -1;
@@ -15,10 +18,14 @@ CRtspSession::CRtspSession(SOCKET aRtspClient, CStreamer * aStreamer) : m_RtspCl
     m_TcpTransport   =  false;
     m_streaming = false;
     m_stopped = false;
+
+    m_RtpClientPort  = 0;
+    m_RtcpClientPort = 0;
 };
 
 CRtspSession::~CRtspSession()
 {
+    m_Streamer->ReleaseUdpTransport();
     closesocket(m_RtspClient);
 };
 
@@ -303,13 +310,24 @@ void CRtspSession::Handle_RtspDESCRIBE()
     socketsend(m_RtspClient,Response,strlen(Response));
 }
 
+void CRtspSession::InitTransport(u_short aRtpPort, u_short aRtcpPort)
+{
+    m_RtpClientPort  = aRtpPort;
+    m_RtcpClientPort = aRtcpPort;
+
+    if (!m_TcpTransport)
+    {   // allocate port pairs for RTP/RTCP ports in UDP transport mode
+        m_Streamer->InitUdpTransport();
+    };
+};
+
 void CRtspSession::Handle_RtspSETUP()
 {
     static char Response[1024];
     static char Transport[255];
 
-    // init RTP streamer transport type (UDP or TCP) and ports for UDP transport
-    m_Streamer->InitTransport(m_ClientRTPPort,m_ClientRTCPPort,m_TcpTransport);
+    // init RTSP Session transport type (UDP or TCP) and ports for UDP transport
+    InitTransport(m_ClientRTPPort,m_ClientRTCPPort);
 
     // simulate SETUP server response
     if (m_TcpTransport)
@@ -400,13 +418,5 @@ bool CRtspSession::handleRequests(uint32_t readTimeoutMs)
         // Timeout on read
 
         return false;
-    }
-}
-
-void CRtspSession::broadcastCurrentFrame(uint32_t curMsec) {
-    // Send a frame
-    if (m_streaming && !m_stopped) {
-        // printf("serving a frame\n");
-        m_Streamer->streamImage(curMsec);
     }
 }

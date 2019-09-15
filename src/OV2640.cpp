@@ -100,6 +100,14 @@ camera_config_t esp32cam_ttgo_t_config{
     .jpeg_quality = 12, //0-63 lower numbers are higher quality
     .fb_count = 2       // if more than one i2s runs in continous mode.  Use only with jpeg
 };
+void OV2640::done(void)
+{
+    if (fb) {
+        //return the frame buffer back to the driver for reuse
+        esp_camera_fb_return(fb);
+        fb = NULL;
+    }
+}
 
 void OV2640::run(void)
 {
