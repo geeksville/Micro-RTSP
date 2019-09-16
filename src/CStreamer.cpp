@@ -191,6 +191,7 @@ bool CStreamer::InitUdpTransport(void)
         }
     };
     ++m_udpRefCount;
+    return true;
 }
 
 void CStreamer::ReleaseUdpTransport(void)
