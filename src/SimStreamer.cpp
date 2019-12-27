@@ -4,7 +4,7 @@
 
 
 #ifdef INCLUDE_SIMDATA
-SimStreamer::SimStreamer(SOCKET aClient, bool showBig) : CStreamer(aClient, showBig ? 800 : 640, showBig ? 600 : 480)
+SimStreamer::SimStreamer(bool showBig) : CStreamer(showBig ? 800 : 640, showBig ? 600 : 480)
 {
     m_showBig = showBig;
 }

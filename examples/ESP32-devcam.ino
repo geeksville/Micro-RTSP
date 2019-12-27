@@ -92,16 +92,24 @@ void handleNotFound()
 }
 #endif
 
+#ifdef ENABLE_OLED
+#define LCD_MESSAGE(msg) lcdMessage(msg)
+#else
+#define LCD_MESSAGE(msg)
+#endif
+
+#ifdef ENABLE_OLED
 void lcdMessage(String msg)
 {
-  #ifdef ENABLE_OLED
     if(hasDisplay) {
         display.clear();
         display.drawString(128 / 2, 32 / 2, msg);
         display.display();
     }
-  #endif
 }
+#endif
+
+CStreamer *streamer;
 
 void setup()
 {
@@ -113,7 +121,7 @@ void setup()
         display.setTextAlignment(TEXT_ALIGN_CENTER);
     }
   #endif
-    lcdMessage("booting");
+    LCD_MESSAGE("booting");
 
     Serial.begin(115200);
     while (!Serial)
@@ -128,7 +136,7 @@ void setup()
 #ifdef SOFTAP_MODE
     const char *hostname = "devcam";
     // WiFi.hostname(hostname); // FIXME - find out why undefined
-    lcdMessage("starting softAP");
+    LCD_MESSAGE("starting softAP");
     WiFi.mode(WIFI_AP);
     WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
     bool result = WiFi.softAP(hostname, "12345678", 1, 0);
@@ -146,7 +154,7 @@ void setup()
         ip = WiFi.softAPIP();
     }
 #else
-    lcdMessage(String("join ") + ssid);
+    LCD_MESSAGE(String("join ") + ssid);
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
     while (WiFi.status() != WL_CONNECTED)
@@ -160,7 +168,7 @@ void setup()
     Serial.println(ip);
 #endif
 
-    lcdMessage(ip.toString());
+    LCD_MESSAGE(ip.toString());
 
 #ifdef ENABLE_WEBSERVER
     server.on("/", HTTP_GET, handle_jpg_stream);
@@ -171,12 +179,11 @@ void setup()
 
 #ifdef ENABLE_RTSPSERVER
     rtspServer.begin();
+
+    //streamer = new SimStreamer(true);             // our streamer for UDP/TCP based RTP transport
+    streamer = new OV2640Streamer(cam);             // our streamer for UDP/TCP based RTP transport
 #endif
 }
-
-CStreamer *streamer;
-CRtspSession *session;
-WiFiClient client; // FIXME, support multiple clients
 
 void loop()
 {
@@ -189,38 +196,28 @@ void loop()
     static uint32_t lastimage = millis();
 
     // If we have an active client connection, just service that until gone
-    // (FIXME - support multiple simultaneous clients)
-    if(session) {
-        session->handleRequests(0); // we don't use a timeout here,
-        // instead we send only if we have new enough frames
-
-        uint32_t now = millis();
+    streamer->handleRequests(0); // we don't use a timeout here,
+    // instead we send only if we have new enough frames
+    uint32_t now = millis();
+    if(streamer->anySessions()) {
         if(now > lastimage + msecPerFrame || now < lastimage) { // handle clock rollover
-            session->broadcastCurrentFrame(now);
+            streamer->streamImage(now);
             lastimage = now;
 
             // check if we are overrunning our max frame rate
             now = millis();
-            if(now > lastimage + msecPerFrame)
+            if(now > lastimage + msecPerFrame) {
                 printf("warning exceeding max frame rate of %d ms\n", now - lastimage);
-        }
-
-        if(session->m_stopped) {
-            delete session;
-            delete streamer;
-            session = NULL;
-            streamer = NULL;
+            }
         }
     }
-    else {
-        client = rtspServer.accept();
-
-        if(client) {
-            //streamer = new SimStreamer(&client, true);             // our streamer for UDP/TCP based RTP transport
-            streamer = new OV2640Streamer(&client, cam);             // our streamer for UDP/TCP based RTP transport
-
-            session = new CRtspSession(&client, streamer); // our threads RTSP session and state
-        }
+    
+    WiFiClient rtspClient = rtspServer.accept();
+    if(rtspClient) {
+        Serial.print("client: ");
+        Serial.print(rtspClient.remoteIP());
+        Serial.println();
+        streamer->addSession(rtspClient);
     }
 #endif
 }
