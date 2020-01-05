@@ -78,7 +78,7 @@ by reading a frame from your camera.
 
 ## Video is delayed
 
-Most players do a buffering. For example VLC by default sets a cache to 1000ms, resulting in a delay. If you want to remove the delay set the ` :network-caching=0` - in the UI it's hidden under `Show more options`.
+Most players do a buffering. For example VLC by default sets a cache to 1000ms, resulting in a noticable delay. If you want to remove the delay set the `:network-caching=0` - in the UI it's hidden under `Show more options`.
 
 # Issues and sending pull requests
 
