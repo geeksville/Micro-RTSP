@@ -253,6 +253,8 @@ void CStreamer::streamFrame(unsigned const char *data, uint32_t dataLen, uint32_
     int offset = 0;
     do {
         offset = SendRtpPacket(data, dataLen, offset, qtable0, qtable1);
+        // Add delay or UDP buffer will overflow.
+        delay(10);
     } while(offset != 0);
 
     // Increment ONLY after a full frame
