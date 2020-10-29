@@ -5,13 +5,15 @@
 
 typedef unsigned const char *BufPtr;
 
+class CRtspSession;
+
 class CStreamer
 {
 public:
-    CStreamer(u_short width, u_short height);
+    CStreamer( u_short width, u_short height );
     virtual ~CStreamer();
 
-    void addSession(WiFiClient& aClient);
+    CRtspSession *addSession( SOCKET aClient );
     LinkedListElement* getClientsListHead() { return &m_Clients; }
 
     int anySessions() { return m_Clients.NotEmpty(); }
@@ -24,6 +26,7 @@ public:
     virtual void    streamImage(uint32_t curMsec) = 0; // send a new image to the client
     bool InitUdpTransport(void);
     void ReleaseUdpTransport(void);
+    bool debug;
 protected:
 
     void    streamFrame(unsigned const char *data, uint32_t dataLen, uint32_t curMsec);
