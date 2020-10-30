@@ -69,9 +69,9 @@ private:
 
     // parameters of the last received RTSP request
     RTSP_CMD_TYPES m_RtspCmdType;                             /// command type (if any) of the current request
-    char m_URLPresentationPart[RTSP_PARAM_STRING_MAX];        /// stream name pre suffix
-    char m_URLStreamPart[RTSP_PARAM_STRING_MAX];              /// stream name suffix
-    char m_URLHostPort[MAX_HOSTNAME_LEN];                     /// host:port part of the URL
+    char m_CommandPresentationPart[RTSP_PARAM_STRING_MAX];        /// stream name pre suffix
+    char m_CommandStreamPart[RTSP_PARAM_STRING_MAX];              /// stream name suffix
+    char m_CommandHostPort[MAX_HOSTNAME_LEN];                     /// host:port part of the URL
     unsigned m_CSeq;                                          /// RTSP command sequence number
     unsigned m_ContentLength;                                 /// SDP string size
 
