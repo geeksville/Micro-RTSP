@@ -21,8 +21,13 @@ CStreamer::CStreamer(u_short width, u_short height) : m_Clients()
     m_prevMsec = 0;
 
     m_udpRefCount = 0;
+
     debug = false;
-};
+
+    m_URIHost = "127.0.0.1:554";
+    m_URIPresentation = "mjpeg";
+    m_URIStream = "1";
+}
 
 CStreamer::~CStreamer()
 {
@@ -43,6 +48,13 @@ CRtspSession* CStreamer::addSession( SOCKET aClient )
     // we have it stored in m_Clients
     session->debug = debug;
     return session;
+}
+
+void CStreamer::setURI( String hostport, String pres, String stream ) // set URI parts for sessions to use.
+{
+    m_URIHost = hostport;
+    m_URIPresentation = pres;
+    m_URIStream = stream;
 }
 
 int CStreamer::SendRtpPacket(unsigned const char * jpeg, int jpegLen, int fragmentOffset, BufPtr quant0tbl, BufPtr quant1tbl)
