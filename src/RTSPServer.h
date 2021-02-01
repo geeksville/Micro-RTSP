@@ -2,6 +2,8 @@
 
 #include "AudioStreamer.h"
 
+#define RTSP_AUDIO_VERSION     "1_0_0"
+
 class RTSPServer {
     private:
         TaskHandle_t workerHandle;

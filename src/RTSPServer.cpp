@@ -2,6 +2,7 @@
 #include "CRtspSession.h"
 
 RTSPServer::RTSPServer(AudioStreamer * streamer, int port) {
+    log_i("RTSP Audio version: " RTSP_AUDIO_VERSION);
     this->streamer = streamer;
     this->port = port;
 }
