@@ -36,7 +36,7 @@ private:
 
     IAudioSource * m_audioSource = NULL;
     int m_samplingRate = 16000;
-    int m_gainFactor = -1;
+    int m_gainFactor = -3;
     int m_fragmentSize;
     int m_fragmentSizeBytes;
     const int HEADER_SIZE = 12;           // size of the RTP header
