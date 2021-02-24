@@ -28,6 +28,8 @@ public:
 
     void Stop();
 
+    TaskHandle_t getTaskHandle() { return m_RTPTask; };
+
 private:
     static void doRTPStream(void * audioStreamerObj);
 

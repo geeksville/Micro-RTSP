@@ -66,7 +66,7 @@ void RTSPServer::serverThread(void* server_obj) {
         // TODO individual sockets
         server->ClientSocket = new WiFiClient(accept(server->MasterSocket->fd(),(struct sockaddr*)&server->ClientAddr,&ClientAddrLen));
         printf("Client connected. Client address: %s\n",inet_ntoa(server->ClientAddr.sin_addr));
-        if (xTaskCreate(RTSPServer::workerThread, "workerThread", 10000, (void*)server, 0, NULL) != pdPASS) {
+        if (xTaskCreate(RTSPServer::workerThread, "workerThread", 8000, (void*)server, 0, NULL) != pdPASS) {
             printf("Couldn't create workerThread\n");
         } else {
             printf("Created workerThread\n");

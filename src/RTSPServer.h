@@ -19,6 +19,7 @@ class RTSPServer {
     public:
         RTSPServer(AudioStreamer * streamer, int port = 8554);
         int runAsync();
+        TaskHandle_t getTaskHandle() { return workerHandle; };
 
     private:
         static void serverThread(void* server_obj);
