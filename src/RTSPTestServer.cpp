@@ -28,7 +28,7 @@ int main()
 
     rtsp.runAsync();
     
-    while(1);
+    while(1) vTaskDelay(10);
 
     log_e("Main is now returning!");
     return 0;
@@ -40,5 +40,5 @@ void setup() {
 }
 
 void loop() {
-
+    vTaskDelay(10);
 }

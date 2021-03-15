@@ -126,7 +126,7 @@ void RTSPServer::workerThread(void * server_obj) {
                 //streamer->Start();
             }
 
-            vTaskDelay(10/portTICK_PERIOD_MS);
+            vTaskDelay(50/portTICK_PERIOD_MS);
         }
 
     

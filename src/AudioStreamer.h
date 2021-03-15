@@ -2,6 +2,7 @@
 
 #include "platglue.h"
 #include "IAudioSource.h"
+#include <esp_timer.h>
 
 
 class AudioStreamer
@@ -61,5 +62,7 @@ private:
     uint32_t m_prevMsec;
 
     int m_udpRefCount;
+
+    esp_timer_handle_t RTP_timer;
 };
 

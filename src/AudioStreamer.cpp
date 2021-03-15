@@ -26,9 +26,14 @@ AudioStreamer::AudioStreamer()
     }
     */
 
-    if (xTaskCreatePinnedToCore(doRTPStream, "RTPTask", 8192, (void*)this, 10, &m_RTPTask, 0) != pdPASS) {
-        printf("ERROR: Task for streaming data could not be created\n");   
-    }
+    esp_timer_create_args_t timer_args;
+    timer_args.callback = AudioStreamer::doRTPStream;
+    timer_args.name = "RTP_timer";
+    timer_args.arg = (void*)this;
+    timer_args.dispatch_method = ESP_TIMER_TASK;
+
+    esp_timer_init();
+    esp_timer_create(&timer_args, &RTP_timer);
     
     this->m_fragmentSize = m_samplingRate / 50;
     this->m_fragmentSizeBytes = m_fragmentSize * m_sampleSizeBytes;
@@ -213,7 +218,7 @@ void AudioStreamer::Start() {
     printf("Starting RTP Stream\n");
     if (m_audioSource != NULL) {
         m_audioSource->start();
-        vTaskResume(m_RTPTask);
+        esp_timer_start_periodic(RTP_timer, 20000);
     } else {
         printf("Error: no streaming source\n");
     }
@@ -224,38 +229,27 @@ void AudioStreamer::Stop() {
     if (m_audioSource != NULL) {
         m_audioSource->stop();
     }
-    vTaskSuspend(m_RTPTask);
+    esp_timer_stop(RTP_timer);
 }
 
 void AudioStreamer::doRTPStream(void * audioStreamerObj) {
     AudioStreamer * streamer = (AudioStreamer*)audioStreamerObj;
     int samples;
-    TickType_t prevWakeTime =  xTaskGetTickCount();
+    int start, stop;
 
+    start = esp_timer_get_time();
 
-    vTaskSuspend(NULL);     // only start when Start() is called
-
-    while(1) {
-        
-        samples = streamer->SendRtpPacketDirect();
-        //int after = xTaskGetTickCount();
-        //printf("RTP packet sent at %i\n", after);
-        if (samples < 0) {
-            printf("Direct sending of RTP stream failed\n");
-        } else if (samples > 0) {           // samples have been sent
-            streamer->m_Timestamp += samples;        // no of samples sent
-            //printf("%i samples sent (%ims); timestamp: %i\n", samples, samples / 16, streamer->m_Timestamp);
-
-            // delay a little less than 20ms
-            if (prevWakeTime + 20/portTICK_PERIOD_MS > xTaskGetTickCount()) {
-                printf("RTP Task is too slow!\n");
-                // reset prevWakeTime to not get this message repeatedly
-                prevWakeTime = xTaskGetTickCount() - 20/portTICK_PERIOD_MS;
-            }
-            vTaskDelayUntil(&prevWakeTime, 17/portTICK_PERIOD_MS);
-        }
-        
+    samples = streamer->SendRtpPacketDirect();
+    //int after = xTaskGetTickCount();
+    //printf("RTP packet sent at %i\n", after);
+    if (samples < 0) {
+        printf("Direct sending of RTP stream failed\n");
+    } else if (samples > 0) {           // samples have been sent
+        streamer->m_Timestamp += samples;        // no of samples sent
+        //printf("%i samples sent (%ims); timestamp: %i\n", samples, samples / 16, streamer->m_Timestamp);
     }
 
-    printf("Error: %s is returning\n", pcTaskGetTaskName(NULL));
+    stop = esp_timer_get_time();
+    printf("Sending RTP packet took %i us\n", (stop - start));
+        
 }
