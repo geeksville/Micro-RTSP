@@ -297,7 +297,7 @@ bool CRtspSession::ParseRtspRequest( char * aRequest, unsigned aRequestSize )
 
             if ( debug ) printf( "+ Transport is %s\n", (m_TcpTransport ? "TCP" : "UDP") );
 
-            m_ClientRTPPort = -1;
+            m_ClientRTPPort = 0;
 
             // now looking for sub-params like clent_port=
             char *next_part, last_char;
@@ -318,7 +318,7 @@ bool CRtspSession::ParseRtspRequest( char * aRequest, unsigned aRequestSize )
 
                 last_char = *next_part; // in case we'll need to put \0 here
 
-                if ( m_ClientRTPPort == -1 && 0 == strncmp( cur_pos, "client_port=", 12 ) ) // "client_port" "=" port [ "-" port ]
+                if ( 0 == strncmp( cur_pos, "client_port=", 12 ) ) // "client_port" "=" port [ "-" port ]
                 {
                     char *p = ( cur_pos += 12 );
                     while( isdigit( *p ) )
@@ -522,7 +522,7 @@ bool CRtspSession::handleRequests( uint32_t readTimeoutMs )
     if ( m_stopped )
         return false; // Already closed down
 
-    static int bufPos = 0; // current position into receiving buffer. used to glue split requests.
+    static unsigned bufPos = 0; // current position into receiving buffer. used to glue split requests.
     static enum { hdrStateUnknown, hdrStateGotMethod, hdrStateInvalid } state = hdrStateUnknown;
     static char RecvBuf[RTSP_BUFFER_SIZE];   // Note: we assume single threaded, this large buf we keep off of the tiny stack
 
