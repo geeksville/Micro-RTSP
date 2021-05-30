@@ -5,13 +5,15 @@
 
 typedef unsigned const char *BufPtr;
 
+class CRtspSession;
+
 class CStreamer
 {
 public:
-    CStreamer(u_short width, u_short height);
+    CStreamer( u_short width, u_short height );
     virtual ~CStreamer();
 
-    void addSession(WiFiClient& aClient);
+    CRtspSession *addSession( SOCKET aClient );
     LinkedListElement* getClientsListHead() { return &m_Clients; }
 
     int anySessions() { return m_Clients.NotEmpty(); }
@@ -24,9 +26,19 @@ public:
     virtual void    streamImage(uint32_t curMsec) = 0; // send a new image to the client
     bool InitUdpTransport(void);
     void ReleaseUdpTransport(void);
+    bool debug;
+    void setURI( String hostport, String pres = "mjpeg", String stream = "1" ); // set URI parts for sessions to use.
+    String getURIHost(){ return m_URIHost; }; // for getting things back by sessions
+    String getURIPresentation(){ return m_URIPresentation; };
+    String getURIStream(){ return m_URIStream; };
+
 protected:
 
     void    streamFrame(unsigned const char *data, uint32_t dataLen, uint32_t curMsec);
+
+    String  m_URIHost; // Host:port URI part that client should use to connect. also it is reported in session answers where appropriate.
+    String  m_URIPresentation; // name of presentation part of URI. sessions will check if client used correct one
+    String  m_URIStream; // stream part of the URI.
 
 private:
     int    SendRtpPacket(unsigned const char *jpeg, int jpegLen, int fragmentOffset, BufPtr quant0tbl = NULL, BufPtr quant1tbl = NULL);// returns new fragmentOffset or 0 if finished with frame

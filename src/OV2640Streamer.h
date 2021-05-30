@@ -6,10 +6,10 @@
 class OV2640Streamer : public CStreamer
 {
     bool m_showBig;
-    OV2640 &m_cam;
+    OV2640 *m_cam;
 
 public:
-    OV2640Streamer(OV2640 &cam);
+    OV2640Streamer(OV2640 *cam);
 
     virtual void    streamImage(uint32_t curMsec);
 };

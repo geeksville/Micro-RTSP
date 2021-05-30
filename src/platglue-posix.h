@@ -10,6 +10,9 @@
 #include <stdio.h>
 #include <errno.h>
 
+#include <string>
+typedef std::string String;
+
 typedef int SOCKET;
 typedef int UDPSOCKET;
 typedef uint32_t IPADDRESS; // On linux use uint32_t in network byte order (per getpeername)
