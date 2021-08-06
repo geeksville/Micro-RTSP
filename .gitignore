@@ -3,6 +3,7 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+.vscode
 
 #Ignore thumbnails created by Windows
 Thumbs.db
