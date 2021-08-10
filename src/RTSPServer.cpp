@@ -47,7 +47,7 @@ int RTSPServer::runAsync() {
         return error;
     }
 
-    if (xTaskCreatePinnedToCore(RTSPServer::serverThread, "RTSPServerThread", 10000, (void*)this, 5, &workerHandle, core) != pdPASS) {
+    if (xTaskCreatePinnedToCore(RTSPServer::serverThread, "RTSPServerThread", 10000, (void*)this, 5, &serverTaskHandle, core) != pdPASS) {
         log_e("Couldn't create server thread");
         return -1;
     } 
@@ -59,6 +59,7 @@ int RTSPServer::runAsync() {
 void RTSPServer::serverThread(void* server_obj) {
     socklen_t ClientAddrLen = sizeof(ClientAddr);
     RTSPServer * server = (RTSPServer*) server_obj;
+    TickType_t prevWakeTime = xTaskGetTickCount();
    
     log_i("Server thread listening...");
 
@@ -79,7 +80,7 @@ void RTSPServer::serverThread(void* server_obj) {
             
         }
 
-        vTaskDelay(200/portTICK_PERIOD_MS);
+        vTaskDelayUntil(&prevWakeTime, 200/portTICK_PERIOD_MS);
     }
 
 

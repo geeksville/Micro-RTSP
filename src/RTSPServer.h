@@ -4,7 +4,7 @@
 
 class RTSPServer {
     private:
-        TaskHandle_t workerHandle;
+        TaskHandle_t serverTaskHandle;
         SOCKET MasterSocket;                                      // our masterSocket(socket that listens for RTSP client connections)
         SOCKET ClientSocket;                                      // RTSP socket to handle an client
         sockaddr_in ServerAddr;                                   // server address parameters
@@ -20,7 +20,7 @@ class RTSPServer {
     public:
         RTSPServer(AudioStreamer * streamer, int port = 8554, int core = 1);
         int runAsync();
-        TaskHandle_t getTaskHandle() { return workerHandle; };
+        TaskHandle_t getTaskHandle() { return serverTaskHandle; };
 
     private:
         static void serverThread(void* server_obj);
