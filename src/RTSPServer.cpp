@@ -70,10 +70,10 @@ void RTSPServer::serverThread(void* server_obj) {
         if (server->numClients == 0) {
             server->ClientSocket = new WiFiClient(accept(server->MasterSocket->fd(),(struct sockaddr*)&server->ClientAddr,&ClientAddrLen));
             log_i("Client connected. Client address: %s",inet_ntoa(server->ClientAddr.sin_addr));
-            if (xTaskCreatePinnedToCore(RTSPServer::workerThread, "RTSPSessionTask", 8000, (void*)server, 8, NULL, server->core) != pdPASS) {
-                log_e("Couldn't create workerThread");
+            if (xTaskCreatePinnedToCore(RTSPServer::sessionThread, "RTSPSessionTask", 8000, (void*)server, 8, &server->sessionTaskHandle, server->core) != pdPASS) {
+                log_e("Couldn't create sessionThread");
             } else {
-                log_d("Created workerThread");
+                log_d("Created sessionThread");
                 server->numClients++;
             }
         } else {
@@ -91,7 +91,7 @@ void RTSPServer::serverThread(void* server_obj) {
 }
 
 
-void RTSPServer::workerThread(void * server_obj) {
+void RTSPServer::sessionThread(void * server_obj) {
     RTSPServer * server = (RTSPServer*)server_obj;
     AudioStreamer * streamer = server->streamer;
     SOCKET s = server->ClientSocket;
@@ -120,7 +120,7 @@ void RTSPServer::workerThread(void * server_obj) {
 
     
     // should never be reached
-    log_i("workerThread stopped, deleting task");
+    log_i("sessionThread stopped, deleting task");
     delete rtsp;
     server->numClients--;
 

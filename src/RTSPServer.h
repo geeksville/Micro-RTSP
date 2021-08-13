@@ -5,6 +5,7 @@
 class RTSPServer {
     private:
         TaskHandle_t serverTaskHandle;
+        TaskHandle_t sessionTaskHandle;
         SOCKET MasterSocket;                                      // our masterSocket(socket that listens for RTSP client connections)
         SOCKET ClientSocket;                                      // RTSP socket to handle an client
         sockaddr_in ServerAddr;                                   // server address parameters
@@ -24,5 +25,5 @@ class RTSPServer {
 
     private:
         static void serverThread(void* server_obj);
-        static void workerThread(void* server_obj);
+        static void sessionThread(void* server_obj);
 };
