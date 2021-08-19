@@ -108,7 +108,7 @@ void RTSPServer::sessionThread(void * server_obj) {
 
         while (rtsp->m_sessionOpen)
         {
-            uint32_t timeout = 400;
+            uint32_t timeout = 50;
             if(!rtsp->handleRequests(timeout)) {
                 //printf("Request handling returned false\n");
             } else {
