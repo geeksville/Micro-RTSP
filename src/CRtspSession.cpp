@@ -6,7 +6,6 @@ CRtspSession::CRtspSession(WiFiClient& aClient, AudioStreamer* aStreamer) :
  m_Client(aClient),
  m_Streamer(aStreamer)
 {
-    printf("Creating RTSP session\n");
     Init();
 
     // create buffers in heap
@@ -24,6 +23,7 @@ CRtspSession::CRtspSession(WiFiClient& aClient, AudioStreamer* aStreamer) :
 
     m_RtpClientPort  = 0;
     m_RtcpClientPort = 0;
+    log_i("RTSP session created");
 };
 
 CRtspSession::~CRtspSession()
@@ -49,7 +49,7 @@ bool CRtspSession::ParseRtspRequest(char const * aRequest, unsigned aRequestSize
 {
     unsigned CurRequestSize;
 
-    printf("aRequest: -------------\n%s-------------------------\n", aRequest);
+    log_v("aRequest: ------------------------\n%s\n-------------------------", aRequest);
 
     Init();
     CurRequestSize = aRequestSize;
@@ -100,11 +100,11 @@ bool CRtspSession::ParseRtspRequest(char const * aRequest, unsigned aRequestSize
     }
     CmdName[i] = '\0';
     if (!parseSucceeded) {
-        printf("failed to parse RTSP\n");
+        log_e("failed to parse RTSP");
         return false;
     }
 
-    printf("RTSP received %s\n", CmdName);
+    log_i("RTSP received %s", CmdName);
 
     // find out the command type
     if (strstr(CmdName,"OPTIONS")   != nullptr) m_RtspCmdType = RTSP_OPTIONS; else
@@ -112,7 +112,7 @@ bool CRtspSession::ParseRtspRequest(char const * aRequest, unsigned aRequestSize
     if (strstr(CmdName,"SETUP")     != nullptr) m_RtspCmdType = RTSP_SETUP; else
     if (strstr(CmdName,"PLAY")      != nullptr) m_RtspCmdType = RTSP_PLAY; else
     if (strstr(CmdName,"TEARDOWN")  != nullptr) m_RtspCmdType = RTSP_TEARDOWN; else 
-    printf("Error: Unsupported Command received (%s)!\n", CmdName);
+    log_e("Error: Unsupported Command received (%s)!", CmdName);
 
     // Skip over the prefix of any "rtsp://" or "rtsp:/" URL that follows:
     unsigned j = i+1;
@@ -143,7 +143,7 @@ bool CRtspSession::ParseRtspRequest(char const * aRequest, unsigned aRequestSize
         }
     }
 
-    printf("m_URLHostPort: %s\n", m_URLHostPort);
+    log_v("m_URLHostPort: %s", m_URLHostPort);
 
     // Look for the URL suffix (before the following "RTSP/"):
     parseSucceeded = false;
@@ -179,11 +179,9 @@ bool CRtspSession::ParseRtspRequest(char const * aRequest, unsigned aRequestSize
             break;
         }
     }
-    printf("m_URLSuffix: %s\n", m_URLSuffix);
-    printf("m_URLPreSuffix: %s\n", m_URLPreSuffix);
-    printf("URL Suffix parse succeeded: %i\n", parseSucceeded);
-    if (!parseSucceeded) //return false;
-        printf("No suffix found\n");
+    log_v("m_URLSuffix: %s", m_URLSuffix);
+    log_v("m_URLPreSuffix: %s", m_URLPreSuffix);
+    log_v("URL Suffix parse succeeded: %i", parseSucceeded);
 
     // Look for "CSeq:", skip whitespace, then read everything up to the next \r or \n as 'CSeq':
     parseSucceeded = false;
@@ -210,7 +208,7 @@ bool CRtspSession::ParseRtspRequest(char const * aRequest, unsigned aRequestSize
             break;
         }
     }
-    printf("Look for CSeq success: %i\n", parseSucceeded);
+    log_v("Look for CSeq success: %i", parseSucceeded);
     if (!parseSucceeded) return false;
 
     // Also: Look for "Content-Length:" (optional)
@@ -389,8 +387,6 @@ void CRtspSession::Handle_RtspPLAY()
 
     socketsend(m_RtspClient,Response,strlen(Response));
 
-    printf("Sent PLAY response:\n %s\n", Response);
-
     m_Streamer->Start();
 }
 
@@ -434,10 +430,6 @@ bool CRtspSession::handleRequests(uint32_t readTimeoutMs)
     if(m_stopped)
         return false; // Already closed down
 
-    /*printf("%s: Stack high watermark: %i KB\n",     
-        pcTaskGetTaskName(NULL),     
-        uxTaskGetStackHighWaterMark(NULL) / 1000     
-    );*/
     memset(RecvBuf,0x00, RTSP_BUFFER_SIZE);
     int res = socketread(m_RtspClient, RecvBuf, RTSP_BUFFER_SIZE, readTimeoutMs);
     if(res > 0) {
@@ -456,7 +448,7 @@ bool CRtspSession::handleRequests(uint32_t readTimeoutMs)
         return true;
     }
     else if(res == 0) {
-        printf("client closed socket, exiting\n");
+        log_w("client closed socket, exiting");
         m_stopped = true;
         return true;
     }

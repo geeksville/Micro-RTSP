@@ -16,29 +16,30 @@ bool connectToWiFi(const char* ssid, const char* password) {
   return true;
 }
 
+RTSPServer * rtsp;
 
-int main()
-{
+void setup() {
     connectToWiFi("unknown", "abec4007");
 
     AudioTestSource testSource = AudioTestSource();
 
     AudioStreamer streamer = AudioStreamer(&testSource);
-    RTSPServer rtsp = RTSPServer(&streamer);
+    rtsp = new RTSPServer(&streamer);
 
-    rtsp.runAsync();
+    rtsp->runAsync();
     
-    while(1) vTaskDelay(10);
-
-    log_e("Main is now returning!");
-    return 0;
-}
-
-void setup() {
-    log_d("Setup function, starting main");
-    main();
+    log_i("Set up done");
 }
 
 void loop() {
-    vTaskDelay(10);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+    log_i("Free heap size: %i KB", esp_get_free_heap_size() / 1000);
+    log_i("%s: Stack high watermark: %i KB",     
+        pcTaskGetTaskName(NULL),     
+        uxTaskGetStackHighWaterMark(NULL) / 1000     
+    );
+    log_i("%s: Stack high watermark: %i KB",     
+        pcTaskGetTaskName(NULL),     
+        uxTaskGetStackHighWaterMark(NULL) / 1000     
+    );
 }

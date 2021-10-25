@@ -1,53 +1,54 @@
 #include "RTSPServer.h"
 #include "CRtspSession.h"
 
-RTSPServer::RTSPServer(AudioStreamer * streamer, int port) {
+RTSPServer::RTSPServer(AudioStreamer * streamer, int port, int core) {
     this->streamer = streamer;
     this->port = port;
+    this->core = core;
 }
 
 int RTSPServer::runAsync() {
     int error;
 
-    printf("running RTSP server\n");
+    log_v("running RTSP server");
 
     ServerAddr.sin_family      = AF_INET;
     ServerAddr.sin_addr.s_addr = INADDR_ANY;
     ServerAddr.sin_port        = htons(port);                 // listen on RTSP port 8554 as default
     int s = socket(AF_INET,SOCK_STREAM,0);
-    printf("Master socket fd: %i\n", s);
+    log_d("Master socket fd: %i", s);
     MasterSocket               = new WiFiClient(s);
     if (MasterSocket == NULL) {
-        printf("MasterSocket object couldnt be created\n");
+        log_e("MasterSocket object couldnt be created");
         return -1;
     }
 
-    printf("Master Socket created; fd: %i\n", MasterSocket->fd());
+    log_d("Master Socket created; fd: %i", MasterSocket->fd());
 
     int enable = 1;
     error = setsockopt(MasterSocket->fd(), SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
     if (error < 0) {
-        printf("setsockopt(SO_REUSEADDR) failed");
+        log_e("setsockopt(SO_REUSEADDR) failed");
         return error;
     }
 
-    printf("Socket options set\n");
+    log_v("Socket options set");
 
     // bind our master socket to the RTSP port and listen for a client connection
     error = bind(MasterSocket->fd(),(sockaddr*)&ServerAddr,sizeof(ServerAddr));
     if (error != 0) {
-        printf("error can't bind port errno=%d\n", errno);
+        log_e("error can't bind port errno=%d", errno);
         return error;
     }
-    printf("Socket bound. Starting to listen\n");
+    log_v("Socket bound. Starting to listen");
     error = listen(MasterSocket->fd(),5);
     if (error != 0) {
-        printf("Error while listening\n");
+        log_e("Error while listening");
         return error;
     }
 
-    if (xTaskCreatePinnedToCore(RTSPServer::serverThread, "RTSPServerThread", 10000, (void*)this, 5, &workerHandle, 1) != pdPASS) {
-        printf("Couldn't create server thread");
+    if (xTaskCreatePinnedToCore(RTSPServer::serverThread, "RTSPServerThread", 10000, (void*)this, 5, &workerHandle, core) != pdPASS) {
+        log_e("Couldn't create server thread");
         return -1;
     } 
 
@@ -59,7 +60,7 @@ void RTSPServer::serverThread(void* server_obj) {
     socklen_t ClientAddrLen = sizeof(ClientAddr);
     RTSPServer * server = (RTSPServer*) server_obj;
    
-    printf("Server thread listening...\n");
+    log_i("Server thread listening...");
 
     while (true)
     {   // loop forever to accept client connections
@@ -67,28 +68,25 @@ void RTSPServer::serverThread(void* server_obj) {
         
         if (server->numClients == 0) {
             server->ClientSocket = new WiFiClient(accept(server->MasterSocket->fd(),(struct sockaddr*)&server->ClientAddr,&ClientAddrLen));
-            printf("Client connected. Client address: %s\n",inet_ntoa(server->ClientAddr.sin_addr));
-            if (xTaskCreatePinnedToCore(RTSPServer::workerThread, "workerThread", 8000, (void*)server, 8, NULL, 1) != pdPASS) {
-                printf("Couldn't create workerThread\n");
+            log_i("Client connected. Client address: %s",inet_ntoa(server->ClientAddr.sin_addr));
+            if (xTaskCreatePinnedToCore(RTSPServer::workerThread, "RTSPSessionTask", 8000, (void*)server, 8, NULL, server->core) != pdPASS) {
+                log_e("Couldn't create workerThread");
             } else {
-                printf("Created workerThread\n");
+                log_d("Created workerThread");
                 server->numClients++;
             }
         } else {
-            vTaskDelay(50);
+            
         }
 
-        vTaskDelay(10);
-        
-        //vTaskResume(workerHandle);
-        // TODO only ONE task used repeatedly
+        vTaskDelay(200/portTICK_PERIOD_MS);
     }
 
 
     // should never be reached
     closesocket(server->MasterSocket);
 
-    printf("Error: %s is returning\n", pcTaskGetTaskName(NULL));
+    log_e("Error: %s is returning", pcTaskGetTaskName(NULL));
 }
 
 
@@ -96,42 +94,32 @@ void RTSPServer::workerThread(void * server_obj) {
     RTSPServer * server = (RTSPServer*)server_obj;
     AudioStreamer * streamer = server->streamer;
     SOCKET s = server->ClientSocket;
+    TickType_t prevWakeTime = xTaskGetTickCount();
 
         // stop this task - wait for a client to connect
         //vTaskSuspend(NULL);
         // TODO check if everything is ok to go
-        printf("Client connected\n");
+        log_v("RTSP Task running");
 
         CRtspSession * rtsp = new CRtspSession(*s, streamer);     // our threads RTSP session and state
 
-        printf("Session ready\n");
+        log_i("Session ready");
 
         while (rtsp->m_sessionOpen)
         {
             uint32_t timeout = 400;
-            //printf("Handling incoming requests\n");
             if(!rtsp->handleRequests(timeout)) {
                 //printf("Request handling returned false\n");
-                struct timeval now;
-                gettimeofday(&now, NULL); // crufty msecish timer
-                //uint32_t msec = now.tv_sec * 1000 + now.tv_usec / 1000;
-                //rtsp.broadcastCurrentFrame(msec);
-                //printf("Audio File has been sent\n");
             } else {
                 //printf("Request handling successful\n");
             }
 
-            if (rtsp->m_streaming) {
-                // Stream RTP data
-                //streamer->Start();
-            }
-
-            vTaskDelay(50/portTICK_PERIOD_MS);
+            vTaskDelayUntil(&prevWakeTime, 50/portTICK_PERIOD_MS);
         }
 
     
     // should never be reached
-    printf("workerThread stopped, deleting task\n");
+    log_i("workerThread stopped, deleting task");
     delete rtsp;
     server->numClients--;
 

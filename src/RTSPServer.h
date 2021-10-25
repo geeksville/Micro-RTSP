@@ -10,6 +10,7 @@ class RTSPServer {
         sockaddr_in ServerAddr;                                   // server address parameters
         sockaddr_in ClientAddr;                                   // address parameters of a new RTSP client
         int port;
+        int core;
     
         int numClients = 0;
 
@@ -17,7 +18,7 @@ class RTSPServer {
         AudioStreamer * streamer;
 
     public:
-        RTSPServer(AudioStreamer * streamer, int port = 8554);
+        RTSPServer(AudioStreamer * streamer, int port = 8554, int core = 1);
         int runAsync();
         TaskHandle_t getTaskHandle() { return workerHandle; };
 
