@@ -3,15 +3,13 @@
 #include "platglue.h"
 #include "IAudioSource.h"
 
-#define STREAMING_BUFFER_SIZE           1024
 
-// TODO allow other types than int16_t
-
+template<class SAMPLE_TYPE>
 class AudioStreamer
 {
 public:
     AudioStreamer();
-    AudioStreamer(IAudioSource * source);
+    AudioStreamer(IAudioSource<SAMPLE_TYPE> * source);
     virtual ~AudioStreamer();
 
     u_short GetRtpServerPort();
@@ -20,9 +18,9 @@ public:
     bool InitUdpTransport(IPADDRESS aClientIP, IPPORT aClientPort);
     void ReleaseUdpTransport(void);
 
-    int AddToStream(uint16_t * data, int len);
+    int AddToStream(SAMPLE_TYPE * data, int len);
 
-    int SendRtpPacket(unsigned const char* data, int len);
+    int SendRtpPacket(SAMPLE_TYPE * data, int len);
     int SendRtpPacketDirect();
 
     int getSampleRate();
@@ -34,9 +32,10 @@ public:
 private:
     static void doRTPStream(void * audioStreamerObj);
 
-    IAudioSource * m_audioSource = NULL;
+    const int STREAMING_BUFFER_SIZE = 1024;
+
+    IAudioSource<SAMPLE_TYPE> * m_audioSource = NULL;
     int m_samplingRate = 16000;
-    int m_gainFactor = -3;
     int m_fragmentSize;
     int m_fragmentSizeBytes;
     const int HEADER_SIZE = 12;           // size of the RTP header

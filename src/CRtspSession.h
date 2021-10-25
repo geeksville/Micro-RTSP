@@ -21,7 +21,7 @@ enum RTSP_CMD_TYPES
 class CRtspSession 
 {
 public:
-    CRtspSession(WiFiClient& aRtspClient, AudioStreamer* aStreamer);
+    CRtspSession(WiFiClient& aRtspClient, AudioStreamer<int16_t>* aStreamer);
     ~CRtspSession();
 
     RTSP_CMD_TYPES Handle_RtspRequest(char const * aRequest, unsigned aRequestSize);
@@ -64,7 +64,7 @@ private:
     int m_StreamID;                                           // number of simulated stream of that session
     IPPORT m_ClientRTPPort;                                  // client port for UDP based RTP transport
     IPPORT m_ClientRTCPPort;                                 // client port for UDP based RTCP transport
-    AudioStreamer * m_Streamer;                                // the UDP streamer of that session
+    AudioStreamer<int16_t> * m_Streamer;                                // the UDP streamer of that session
 
     // parameters of the last received RTSP request
 

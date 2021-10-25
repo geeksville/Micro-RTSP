@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <time.h>
 
-CRtspSession::CRtspSession(WiFiClient& aClient, AudioStreamer* aStreamer) :
+CRtspSession::CRtspSession(WiFiClient& aClient, AudioStreamer<int16_t>* aStreamer) :
  m_Client(aClient),
  m_Streamer(aStreamer)
 {

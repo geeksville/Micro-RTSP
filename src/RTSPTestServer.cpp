@@ -2,6 +2,7 @@
 
 #include "RTSPServer.h"
 #include "AudioStreamer.h"
+#include "AudioTestSource.h"
 #include <WiFi.h>
 
 bool connectToWiFi(const char* ssid, const char* password) {
@@ -20,7 +21,9 @@ int main()
 {
     connectToWiFi("unknown", "abec4007");
 
-    AudioStreamer streamer = AudioStreamer();
+    AudioTestSource testSource = AudioTestSource();
+
+    AudioStreamer<int16_t> streamer = AudioStreamer<int16_t>(&testSource);
     RTSPServer rtsp = RTSPServer(&streamer);
 
     rtsp.runAsync();
