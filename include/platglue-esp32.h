@@ -22,8 +22,6 @@ typedef uint16_t IPPORT; // on linux use network byte order
 #define NULLSOCKET NULL
 
 inline void closesocket(SOCKET s) {
-    printf("closing TCP socket\n");
-
     if(s) {
         s->stop();
         // delete s; TDP WiFiClients are never on the heap in arduino land?
@@ -38,7 +36,6 @@ inline void socketpeeraddr(SOCKET s, IPADDRESS *addr, IPPORT *port) {
 }
 
 inline void udpsocketclose(UDPSOCKET s) {
-    printf("closing UDP socket\n");
     if(s) {
         s->stop();
         delete s;
