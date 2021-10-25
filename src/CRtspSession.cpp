@@ -369,7 +369,7 @@ void CRtspSession::Handle_RtspPLAY()
              "RTSP/1.0 200 OK\r\n"
              "CSeq: %s\r\n"
              //"%s\r\n"
-             //"Range: npt=0.000-\r\n"
+             "Range: npt=0.000-\r\n"                // this is necessary
              "Session: %i\r\n\r\n"
              //"RTP-Info: url=rtsp://127.0.0.1:8554/%s=0\r\n\r\n",          // TODO whats this
              ,

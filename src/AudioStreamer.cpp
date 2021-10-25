@@ -76,7 +76,7 @@ AudioStreamer::AudioStreamer()
     m_RtcpServerPort = 0;
 
     m_SequenceNumber = 0;
-    m_Timestamp      = 0;
+    m_Timestamp      = 1611514144;
     m_SendIdx        = 0;
 
     m_RtpSocket = NULLSOCKET;
@@ -106,7 +106,7 @@ int AudioStreamer::SendRtpPacket(unsigned const char* data, int len)
     // printf("CStreamer::SendRtpPacket offset:%d - begin\n", fragmentOffset);
 #define KRtpHeaderSize 12           // size of the RTP header
 
-#define MAX_FRAGMENT_SIZE 320 // FIXME, pick more carefully
+#define MAX_FRAGMENT_SIZE 640 // FIXME, pick more carefully
 
     static char RtpBuf[2048]; // Note: we assume single threaded, this large buf we keep off of the tiny stack
     if (len > MAX_FRAGMENT_SIZE) len = MAX_FRAGMENT_SIZE;
@@ -236,8 +236,10 @@ void AudioStreamer::Stop() {
 
 void AudioStreamer::doRTPStram(void * audioStreamerObj) {
     AudioStreamer * streamer = (AudioStreamer*)audioStreamerObj;
+    int bytes = 0;
     int sent = 0;
     int sampleCount = 0;
+    TickType_t prevWakeTime =  xTaskGetTickCount();
 
     uint8_t * testDataNet = (uint8_t*) testData;
     uint8_t tmp;
@@ -255,11 +257,13 @@ void AudioStreamer::doRTPStram(void * audioStreamerObj) {
             sent = 0;
             sampleCount++;
 
-            printf("%i samples sent (%ims)\n", sampleCount, sampleCount * 64);
-        }
-        sent += streamer->SendRtpPacket((unsigned char*)&testData[sent], (1024-sent) * sizeof(int16_t));
+            //streamer->m_Timestamp += sampleCount;//64
 
-        
-        vTaskDelay(20/portTICK_PERIOD_MS);      // delay 20ms
+            printf("%i samples sent (%ims); timestamp: %i\n", sampleCount, sampleCount * 64, streamer->m_Timestamp);
+        }
+        bytes = streamer->SendRtpPacket((unsigned char*)&testData[sent], (1024-sent) * sizeof(int16_t));
+        sent += bytes;
+        streamer->m_Timestamp += bytes >> 1;        // no of samples sent
+        vTaskDelayUntil(&prevWakeTime, 20/portTICK_PERIOD_MS);      // delay 20ms
     }
 }
