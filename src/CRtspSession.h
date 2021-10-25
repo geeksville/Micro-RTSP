@@ -53,6 +53,8 @@ private:
     void Handle_RtspSETUP();
     void Handle_RtspPLAY();
 
+    const char * STD_URL_PRE_SUFFIX = "stream";
+
     // global session state parameters
     int m_RtspSessionID;
     WiFiClient m_Client;

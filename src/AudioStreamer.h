@@ -2,6 +2,7 @@
 
 #include "platglue.h"
 
+#define STREAMING_BUFFER_SIZE           1024
 
 class AudioStreamer
 {
@@ -15,11 +16,20 @@ public:
     bool InitUdpTransport(IPADDRESS aClientIP, IPPORT aClientPort);
     void ReleaseUdpTransport(void);
 
-    void Stream(unsigned char * data, int len);
+    int AddToStream(uint16_t * data, int len);
 
     int SendRtpPacket(unsigned const char* data, int len);
 
+    void Start();
+
+    void Stop();
+
 private:
+    static void doRTPStram(void * audioStreamerObj);
+
+    QueueHandle_t m_streamingData;
+    TaskHandle_t m_RTPTask;
+
     UDPSOCKET m_RtpSocket;           // RTP socket for streaming RTP packets to client
     UDPSOCKET m_RtcpSocket;          // RTCP socket for sending/receiving RTCP packages
 
