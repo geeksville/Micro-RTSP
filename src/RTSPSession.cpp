@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <ctime>
 
-CRtspSession::CRtspSession(WiFiClient& aClient, AudioStreamer* aStreamer) :
+RtspSession::RtspSession(WiFiClient& aClient, AudioStreamer* aStreamer) :
  m_Client(aClient),
  m_Streamer(aStreamer)
 {
@@ -26,7 +26,7 @@ CRtspSession::CRtspSession(WiFiClient& aClient, AudioStreamer* aStreamer) :
     log_i("RTSP session created");
 };
 
-CRtspSession::~CRtspSession()
+RtspSession::~RtspSession()
 {
     //m_Streamer->ReleaseUdpTransport();
     closesocket(m_RtspClient);
@@ -35,7 +35,7 @@ CRtspSession::~CRtspSession()
     delete CurRequest;
 };
 
-void CRtspSession::Init()
+void RtspSession::Init()
 {
     m_RtspCmdType   = RTSP_UNKNOWN;
     memset(m_URLPreSuffix, 0x00, sizeof(m_URLPreSuffix));
@@ -45,7 +45,7 @@ void CRtspSession::Init()
     m_ContentLength  =  0;
 };
 
-bool CRtspSession::ParseRtspRequest(char const * aRequest, unsigned aRequestSize)
+bool RtspSession::ParseRtspRequest(char const * aRequest, unsigned aRequestSize)
 {
     unsigned CurRequestSize;
 
@@ -232,7 +232,7 @@ bool CRtspSession::ParseRtspRequest(char const * aRequest, unsigned aRequestSize
     return true;
 };
 
-RTSP_CMD_TYPES CRtspSession::Handle_RtspRequest(char const * aRequest, unsigned aRequestSize)
+RTSP_CMD_TYPES RtspSession::Handle_RtspRequest(char const * aRequest, unsigned aRequestSize)
 {
     if (ParseRtspRequest(aRequest,aRequestSize))
     {
@@ -249,7 +249,7 @@ RTSP_CMD_TYPES CRtspSession::Handle_RtspRequest(char const * aRequest, unsigned 
     return m_RtspCmdType;
 };
 
-void CRtspSession::Handle_RtspOPTION()
+void RtspSession::Handle_RtspOPTION()
 {
     static char Response[1024]; // Note: we assume single threaded, this large buf we keep off of the tiny stack
 
@@ -260,7 +260,7 @@ void CRtspSession::Handle_RtspOPTION()
     socketsend(m_RtspClient,Response,strlen(Response));
 }
 
-void CRtspSession::Handle_RtspDESCRIBE()
+void RtspSession::Handle_RtspDESCRIBE()
 {
     static char Response[1024]; // Note: we assume single threaded, this large buf we keep off of the tiny stack
     static char SDPBuf[1024];
@@ -321,7 +321,7 @@ void CRtspSession::Handle_RtspDESCRIBE()
     socketsend(m_RtspClient,Response,strlen(Response));
 }
 
-void CRtspSession::InitTransport(u_short aRtpPort, u_short aRtcpPort)
+void RtspSession::InitTransport(u_short aRtpPort, u_short aRtcpPort)
 {
     m_RtpClientPort  = aRtpPort;
     m_RtcpClientPort = aRtcpPort;
@@ -333,7 +333,7 @@ void CRtspSession::InitTransport(u_short aRtpPort, u_short aRtcpPort)
     m_Streamer->InitUdpTransport(clientIP, m_RtpClientPort);
 };
 
-void CRtspSession::Handle_RtspSETUP()
+void RtspSession::Handle_RtspSETUP()
 {
     static char Response[1024];
     static char Transport[255];
@@ -366,7 +366,7 @@ void CRtspSession::Handle_RtspSETUP()
     socketsend(m_RtspClient,Response,strlen(Response));
 }
 
-void CRtspSession::Handle_RtspPLAY()
+void RtspSession::Handle_RtspPLAY()
 {
     static char Response[1024];
 
@@ -390,7 +390,7 @@ void CRtspSession::Handle_RtspPLAY()
     m_Streamer->Start();
 }
 
-void CRtspSession::Handle_RtspTEARDOWN()
+void RtspSession::Handle_RtspTEARDOWN()
 {
     static char Response[1024];
 
@@ -407,7 +407,7 @@ void CRtspSession::Handle_RtspTEARDOWN()
     m_sessionOpen = false;
 }
 
-char const * CRtspSession::DateHeader()
+char const * RtspSession::DateHeader()
 {
     static char buf[200];
     time_t tt = time(NULL);
@@ -415,7 +415,7 @@ char const * CRtspSession::DateHeader()
     return buf;
 }
 
-int CRtspSession::GetStreamID()
+int RtspSession::GetStreamID()
 {
     return m_StreamID;
 };
@@ -425,7 +425,7 @@ int CRtspSession::GetStreamID()
 /**
    Read from our socket, parsing commands as possible.
  */
-bool CRtspSession::handleRequests(uint32_t readTimeoutMs)
+bool RtspSession::handleRequests(uint32_t readTimeoutMs)
 {
     if(m_stopped)
         return false; // Already closed down

@@ -4,37 +4,13 @@
 #include "IAudioSource.h"
 #include <esp_timer.h>
 
-
+/**
+ * Class for streaming data from a source into an RTP stream
+ */
 class AudioStreamer
 {
-public:
-    AudioStreamer();
-    AudioStreamer(IAudioSource * source);
-    virtual ~AudioStreamer();
-
-    u_short GetRtpServerPort();
-    u_short GetRtcpServerPort();
-
-    bool InitUdpTransport(IPADDRESS aClientIP, IPPORT aClientPort);
-    void ReleaseUdpTransport(void);
-
-    //int AddToStream(SAMPLE_TYPE * data, int len);
-    //int SendRtpPacket(SAMPLE_TYPE * data, int len);
-
-    int SendRtpPacketDirect();
-
-    int getSampleRate();
-
-    void Start();
-
-    void Stop();
-
-    TaskHandle_t getTaskHandle() { return m_RTPTask; };
-
 private:
-    static void doRTPStream(void * audioStreamerObj);
-
-    const int STREAMING_BUFFER_SIZE = 2048;
+  const int STREAMING_BUFFER_SIZE = 2048;
     unsigned char * RtpBuf;
 
     IAudioSource * m_audioSource = NULL;
@@ -44,9 +20,6 @@ private:
     int m_fragmentSizeBytes;
     const int HEADER_SIZE = 12;           // size of the RTP header
 
-    //QueueHandle_t m_streamingData;
-
-    TaskHandle_t m_RTPTask;
 
     UDPSOCKET m_RtpSocket;           // RTP socket for streaming RTP packets to client
     UDPSOCKET m_RtcpSocket;          // RTCP socket for sending/receiving RTCP packages
@@ -65,5 +38,63 @@ private:
     int m_udpRefCount;
 
     esp_timer_handle_t RTP_timer;
+
+public:
+    /**
+     * Creates a new AudioStreamer object
+     */
+    AudioStreamer();
+
+    /**
+     * Creates a new AudioStreamer object
+     * @param source Object implementing the IAudioSource interface, used as a source for the RTP stream
+     */
+    AudioStreamer(IAudioSource * source);
+
+    /**
+     * Deletes allocated memory
+     */
+    virtual ~AudioStreamer();
+
+    /**
+     * Opens sockets for RTP stream
+     * @param aClientIP IP address of the RTP client
+     * @param aClientPort port of the RTP client
+     * @return true on success
+     */
+    bool InitUdpTransport(IPADDRESS aClientIP, IPPORT aClientPort);
+
+    /**
+     * Close sockets used for RTP stream
+     */
+    void ReleaseUdpTransport(void);
+
+    /**
+     * Sends an RTP packet using the audio source given. Audio source copies data right into the RTP packet
+     * @return number of samples sent in the packet
+     */
+    int SendRtpPacketDirect();
+
+    /**
+     * Start the RTP stream
+     */
+    void Start();
+
+    /**
+     * Stop the RTP stream
+     */
+    void Stop();
+
+    u_short GetRtpServerPort();
+    u_short GetRtcpServerPort();
+    int getSampleRate();
+
+private:
+    /**
+     * Task Routine for RTP stream. Carries out the stream
+     * @param audioStreamObj instance of AudioStreamer 
+     */
+    static void doRTPStream(void * audioStreamerObj);
+
 };
 

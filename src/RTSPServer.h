@@ -2,6 +2,9 @@
 
 #include "AudioStreamer.h"
 
+/**
+ * Creates an RTSP Server to listen for client connections and start sessions
+ */
 class RTSPServer {
     private:
         TaskHandle_t serverTaskHandle;
@@ -10,20 +13,38 @@ class RTSPServer {
         SOCKET ClientSocket;                                      // RTSP socket to handle an client
         sockaddr_in ServerAddr;                                   // server address parameters
         sockaddr_in ClientAddr;                                   // address parameters of a new RTSP client
-        int port;
-        int core;
+        int port;               // port that the RTSP Server listens on
+        int core;               // the ESP32 core number the RTSP runs on (0 or 1)
     
-        int numClients = 0;
+        int numClients = 0;         // number of connected clients
 
-        // TODO allow any types
-        AudioStreamer * streamer;
+        AudioStreamer * streamer;   // AudioStreamer object that acts as a source for data streams
 
     public:
+        /**
+         * Creates a new RTSP server
+         * @param streamer AudioStreamer object that acts as a source for data streams
+         * @param port port that the RTSP Server should listen on (default 8554)
+         * @param core the ESP32 core number the RTSP runs on (0 or 1, default 1)
+         */
         RTSPServer(AudioStreamer * streamer, int port = 8554, int core = 1);
+
+        /**
+         * Starts running the server in a new asynchronous Task
+         * @return 0 on success, or error number
+         */
         int runAsync();
+
         TaskHandle_t getTaskHandle() { return serverTaskHandle; };
 
     private:
+        /**
+         * Routine for main server thread, listens for new clients 
+         */ 
         static void serverThread(void* server_obj);
+
+        /**
+         * Routine for a session if it is started
+         */
         static void sessionThread(void* server_obj);
 };

@@ -102,7 +102,7 @@ void RTSPServer::sessionThread(void * server_obj) {
         // TODO check if everything is ok to go
         log_v("RTSP Task running");
 
-        CRtspSession * rtsp = new CRtspSession(*s, streamer);     // our threads RTSP session and state
+        RtspSession * rtsp = new RtspSession(*s, streamer);     // our threads RTSP session and state
 
         log_i("Session ready");
 
