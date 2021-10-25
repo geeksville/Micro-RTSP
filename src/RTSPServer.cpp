@@ -1,5 +1,5 @@
 #include "RTSPServer.h"
-#include "CRtspSession.h"
+#include "RTSPSession.h"
 
 RTSPServer::RTSPServer(AudioStreamer * streamer, int port, int core) {
     this->streamer = streamer;
