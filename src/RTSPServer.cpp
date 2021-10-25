@@ -1,7 +1,7 @@
 #include "RTSPServer.h"
 #include "CRtspSession.h"
 
-RTSPServer::RTSPServer(AudioStreamer<int16_t> * streamer, int port) {
+RTSPServer::RTSPServer(AudioStreamer * streamer, int port) {
     this->streamer = streamer;
     this->port = port;
 }
@@ -83,7 +83,7 @@ void RTSPServer::serverThread(void* server_obj) {
 
 void RTSPServer::workerThread(void * server_obj) {
     RTSPServer * server = (RTSPServer*)server_obj;
-    AudioStreamer<int16_t> * streamer = server->streamer;
+    AudioStreamer * streamer = server->streamer;
     SOCKET s = server->ClientSocket;
 
         // stop this task - wait for a client to connect

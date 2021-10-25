@@ -2,8 +2,7 @@
 #include <stdio.h>
 
 
-template<class SAMPLE_TYPE>
-AudioStreamer<SAMPLE_TYPE>::AudioStreamer()
+AudioStreamer::AudioStreamer()
 {
     printf("Creating Audio streamer\n");
     m_RtpServerPort  = 0;
@@ -20,38 +19,39 @@ AudioStreamer<SAMPLE_TYPE>::AudioStreamer()
 
     m_udpRefCount = 0;
 
+    /*
     m_streamingData = xQueueCreate(STREAMING_BUFFER_SIZE, sizeof(SAMPLE_TYPE));
     if (m_streamingData == NULL) {
         printf("ERROR: Queue for streaming data could not be created\n");
     }
+    */
 
     if (xTaskCreatePinnedToCore(doRTPStream, "RTPTask", 4096, (void*)this, 1, &m_RTPTask, 1) != pdPASS) {
         printf("ERROR: Task for streaming data could not be created\n");   
     }
     
     this->m_fragmentSize = m_samplingRate / 50;
-    this->m_fragmentSizeBytes = m_fragmentSize * sizeof(SAMPLE_TYPE);
+    this->m_fragmentSizeBytes = m_fragmentSize * m_sampleSizeBytes;
 
     printf("Audio streamer created. Sampling rate: %i, Fragment size: %i (%i bytes)\n", m_samplingRate, m_fragmentSize, m_fragmentSizeBytes);
 }
 
-template<class SAMPLE_TYPE>
-AudioStreamer<SAMPLE_TYPE>::AudioStreamer(IAudioSource<SAMPLE_TYPE> * source) : AudioStreamer() {
+AudioStreamer::AudioStreamer(IAudioSource * source) : AudioStreamer() {
     this->m_audioSource = source;
     this->m_samplingRate = source->getSampleRate();
+    this->m_sampleSizeBytes = source->getSampleSizeBytes();
 }
 
-template<class SAMPLE_TYPE>
-AudioStreamer<SAMPLE_TYPE>::~AudioStreamer()
+AudioStreamer::~AudioStreamer()
 {
     
 }
 
-template<class SAMPLE_TYPE>
-int AudioStreamer<SAMPLE_TYPE>::getSampleRate() {
+int AudioStreamer::getSampleRate() {
     return this->m_samplingRate;
 }
 
+/*
 template<class SAMPLE_TYPE>
 int AudioStreamer<SAMPLE_TYPE>::SendRtpPacket(SAMPLE_TYPE * data, int len)
 {
@@ -97,9 +97,9 @@ int AudioStreamer<SAMPLE_TYPE>::SendRtpPacket(SAMPLE_TYPE * data, int len)
     // printf("CStreamer::SendRtpPacket offset:%d - end\n", fragmentOffset);
     return len;
 }
+*/
 
-template<class SAMPLE_TYPE>
-int AudioStreamer<SAMPLE_TYPE>::SendRtpPacketDirect() {
+int AudioStreamer::SendRtpPacketDirect() {
     static unsigned char RtpBuf[2048]; // Note: we assume single threaded, this large buf we keep off of the tiny stack
 
     // Prepare the 12 byte RTP header
@@ -121,9 +121,9 @@ int AudioStreamer<SAMPLE_TYPE>::SendRtpPacketDirect() {
         log_e("No audio source provided");
         return -1;
     }
-    SAMPLE_TYPE * dataBuf = (SAMPLE_TYPE*)(RtpBuf + HEADER_SIZE);
+    unsigned char * dataBuf = (RtpBuf + HEADER_SIZE);
     int samples = m_audioSource->readDataTo(dataBuf, m_fragmentSize);
-    int byteLen = samples * sizeof(SAMPLE_TYPE);
+    int byteLen = samples * m_audioSource->getSampleSizeBytes();
 
     m_SequenceNumber++;                              // prepare the packet counter for the next packet
 
@@ -132,20 +132,17 @@ int AudioStreamer<SAMPLE_TYPE>::SendRtpPacketDirect() {
     return samples;
 }
 
-template<class SAMPLE_TYPE>
-u_short AudioStreamer<SAMPLE_TYPE>::GetRtpServerPort()
+u_short AudioStreamer::GetRtpServerPort()
 {
     return m_RtpServerPort;
 };
 
-template<class SAMPLE_TYPE>
-u_short AudioStreamer<SAMPLE_TYPE>::GetRtcpServerPort()
+u_short AudioStreamer::GetRtcpServerPort()
 {
     return m_RtcpServerPort;
 };
 
-template<class SAMPLE_TYPE>
-bool AudioStreamer<SAMPLE_TYPE>::InitUdpTransport(IPADDRESS aClientIP, IPPORT aClientPort)
+bool AudioStreamer::InitUdpTransport(IPADDRESS aClientIP, IPPORT aClientPort)
 {
     m_ClientIP = aClientIP;
     m_ClientPort = aClientPort;
@@ -184,8 +181,7 @@ bool AudioStreamer<SAMPLE_TYPE>::InitUdpTransport(IPADDRESS aClientIP, IPPORT aC
     return true;
 }
 
-template<class SAMPLE_TYPE>
-void AudioStreamer<SAMPLE_TYPE>::ReleaseUdpTransport(void)
+void AudioStreamer::ReleaseUdpTransport(void)
 {
     --m_udpRefCount;
     if (m_udpRefCount == 0)
@@ -200,8 +196,8 @@ void AudioStreamer<SAMPLE_TYPE>::ReleaseUdpTransport(void)
     }
 }
 
-template<class SAMPLE_TYPE>
-int AudioStreamer<SAMPLE_TYPE>::AddToStream(SAMPLE_TYPE * data, int len) {
+/*
+int AudioStreamer::AddToStream(SAMPLE_TYPE * data, int len) {
     for (int i=0; i < len; i++) {
         if (xQueueSend(m_streamingData, &data[i], 0) != pdTRUE) {
             return i;
@@ -210,9 +206,9 @@ int AudioStreamer<SAMPLE_TYPE>::AddToStream(SAMPLE_TYPE * data, int len) {
 
     return 0;
 }
+*/
 
-template<class SAMPLE_TYPE>
-void AudioStreamer<SAMPLE_TYPE>::Start() {
+void AudioStreamer::Start() {
     printf("Starting RTP Stream\n");
     if (m_audioSource != NULL) {
         m_audioSource->start();
@@ -220,8 +216,7 @@ void AudioStreamer<SAMPLE_TYPE>::Start() {
     vTaskResume(m_RTPTask);
 }
 
-template<class SAMPLE_TYPE>
-void AudioStreamer<SAMPLE_TYPE>::Stop() {
+void AudioStreamer::Stop() {
     printf("Stopping RTP Stream\n");
     if (m_audioSource != NULL) {
         m_audioSource->stop();
@@ -229,8 +224,7 @@ void AudioStreamer<SAMPLE_TYPE>::Stop() {
     vTaskSuspend(m_RTPTask);
 }
 
-template<class SAMPLE_TYPE>
-void AudioStreamer<SAMPLE_TYPE>::doRTPStream(void * audioStreamerObj) {
+void AudioStreamer::doRTPStream(void * audioStreamerObj) {
     AudioStreamer * streamer = (AudioStreamer*)audioStreamerObj;
     int bytes = 0;
     int samples;

@@ -23,7 +23,7 @@ int main()
 
     AudioTestSource testSource = AudioTestSource();
 
-    AudioStreamer<int16_t> streamer = AudioStreamer<int16_t>(&testSource);
+    AudioStreamer streamer = AudioStreamer(&testSource);
     RTSPServer rtsp = RTSPServer(&streamer);
 
     rtsp.runAsync();

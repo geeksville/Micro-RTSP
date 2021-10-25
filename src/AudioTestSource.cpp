@@ -18,9 +18,10 @@ int AudioTestSource::getSampleRate() {
     return sampleRate;
 }
 
-int AudioTestSource::readDataTo(int16_t * dest, int maxSamples) {
+int AudioTestSource::readDataTo(void * dest, int maxSamples) {
+    int16_t * destSamples = (int16_t*) dest;
     for (int i = 0; i < maxSamples; i++) {
-        dest[i] = testData[index];
+        destSamples[i] = testData[index];
         index++;
         if (index >= testDataSamples) index = 0;
     }

@@ -14,10 +14,10 @@ class RTSPServer {
         int numClients = 0;
 
         // TODO allow any types
-        AudioStreamer<int16_t> * streamer;
+        AudioStreamer * streamer;
 
     public:
-        RTSPServer(AudioStreamer<int16_t> * streamer, int port = 8554);
+        RTSPServer(AudioStreamer * streamer, int port = 8554);
         int runAsync();
 
     private:

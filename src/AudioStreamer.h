@@ -4,12 +4,11 @@
 #include "IAudioSource.h"
 
 
-template<class SAMPLE_TYPE>
 class AudioStreamer
 {
 public:
     AudioStreamer();
-    AudioStreamer(IAudioSource<SAMPLE_TYPE> * source);
+    AudioStreamer(IAudioSource * source);
     virtual ~AudioStreamer();
 
     u_short GetRtpServerPort();
@@ -18,9 +17,9 @@ public:
     bool InitUdpTransport(IPADDRESS aClientIP, IPPORT aClientPort);
     void ReleaseUdpTransport(void);
 
-    int AddToStream(SAMPLE_TYPE * data, int len);
+    //int AddToStream(SAMPLE_TYPE * data, int len);
+    //int SendRtpPacket(SAMPLE_TYPE * data, int len);
 
-    int SendRtpPacket(SAMPLE_TYPE * data, int len);
     int SendRtpPacketDirect();
 
     int getSampleRate();
@@ -34,13 +33,15 @@ private:
 
     const int STREAMING_BUFFER_SIZE = 1024;
 
-    IAudioSource<SAMPLE_TYPE> * m_audioSource = NULL;
+    IAudioSource * m_audioSource = NULL;
     int m_samplingRate = 16000;
+    int m_sampleSizeBytes = 2;
     int m_fragmentSize;
     int m_fragmentSizeBytes;
     const int HEADER_SIZE = 12;           // size of the RTP header
 
-    QueueHandle_t m_streamingData;
+    //QueueHandle_t m_streamingData;
+
     TaskHandle_t m_RTPTask;
 
     UDPSOCKET m_RtpSocket;           // RTP socket for streaming RTP packets to client

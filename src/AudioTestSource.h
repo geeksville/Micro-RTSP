@@ -3,7 +3,7 @@
 #include "IAudioSource.h"
 #include <stdint.h>
 
-class AudioTestSource : public IAudioSource<int16_t> {
+class AudioTestSource : public IAudioSource {
     private:
         int index = 0;
         const int testDataSamples = 1024;
@@ -17,5 +17,6 @@ class AudioTestSource : public IAudioSource<int16_t> {
     public:
         AudioTestSource();
         int getSampleRate();
-        int readDataTo(int16_t * dest, int maxSamples);
+        int getSampleSizeBytes() { return sizeof(int16_t); };
+        int readDataTo(void * dest, int maxSamples);
 };
