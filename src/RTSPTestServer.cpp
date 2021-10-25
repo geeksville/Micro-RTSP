@@ -22,11 +22,10 @@ bool connectToWiFi(const char* ssid, const char* password) {
 void workerThread(void * socket_obj) {
     SOCKET s = (SOCKET) socket_obj;
     AudioStreamer streamer = AudioStreamer();                     // our streamer for UDP/TCP based RTP transport
-    bool frameSent = false;
 
     CRtspSession rtsp = CRtspSession(*s, &streamer);     // our threads RTSP session and state
 
-    while (!rtsp.m_stopped && !frameSent)
+    while (rtsp.m_sessionOpen)
     {
         uint32_t timeout = 400;
         if(!rtsp.handleRequests(timeout)) {
@@ -35,7 +34,6 @@ void workerThread(void * socket_obj) {
             gettimeofday(&now, NULL); // crufty msecish timer
             //uint32_t msec = now.tv_sec * 1000 + now.tv_usec / 1000;
             //rtsp.broadcastCurrentFrame(msec);
-            frameSent = true;
             //printf("Audio File has been sent\n");
         } else {
             printf("Request handling successful\n");
@@ -48,6 +46,8 @@ void workerThread(void * socket_obj) {
     }
 
     printf("workerThread stopped\n");
+
+    vTaskSuspend(NULL);         // stop this task
     while(1);
 }
 
@@ -101,6 +101,7 @@ int main()
         ClientSocket = new WiFiClient(accept(MasterSocket->fd(),(struct sockaddr*)&ClientAddr,&ClientAddrLen));
         printf("Client connected. Client address: %s\r\n",inet_ntoa(ClientAddr.sin_addr));
         xTaskCreate(workerThread, "workerThread", 10000, (void*)ClientSocket, 0, &workerHandle);
+        // TODO only ONE task used repeatedly
         //if(fork() == 0)
         //    workerThread(ClientSocket);
     }

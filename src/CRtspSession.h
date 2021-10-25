@@ -36,6 +36,7 @@ public:
 
     bool m_streaming;
     bool m_stopped;
+    bool m_sessionOpen = true;
 
     void    InitTransport(u_short aRtpPort, u_short aRtcpPort);
 
@@ -52,8 +53,9 @@ private:
     void Handle_RtspDESCRIBE();
     void Handle_RtspSETUP();
     void Handle_RtspPLAY();
+    void Handle_RtspTEARDOWN();
 
-    const char * STD_URL_PRE_SUFFIX = "stream";
+    const char * STD_URL_PRE_SUFFIX = "trackID";
 
     // global session state parameters
     int m_RtspSessionID;

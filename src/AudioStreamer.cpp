@@ -91,7 +91,7 @@ AudioStreamer::AudioStreamer()
         printf("ERROR: Queue for streaming data could not be created\n");
     }
 
-    if (xTaskCreate(doRTPStram, "RTPTask", 4096, (void*)this, 0, &m_RTPTask) != pdPASS) {
+    if (xTaskCreate(doRTPStram, "RTPTask", 4096, (void*)this, 1, &m_RTPTask) != pdPASS) {
         printf("ERROR: Task for streaming data could not be created\n");   
     }
 };
@@ -164,6 +164,9 @@ bool AudioStreamer::InitUdpTransport(IPADDRESS aClientIP, IPPORT aClientPort)
 {
     m_ClientIP = aClientIP;
     m_ClientPort = aClientPort;
+
+    m_SequenceNumber = getRandom();
+
     if (m_udpRefCount != 0)
     {
         ++m_udpRefCount;
@@ -257,6 +260,6 @@ void AudioStreamer::doRTPStram(void * audioStreamerObj) {
         sent += streamer->SendRtpPacket((unsigned char*)&testData[sent], (1024-sent) * sizeof(int16_t));
 
         
-        vTaskDelay(20/portTICK_PERIOD_MS);      // delay 15ms
+        vTaskDelay(20/portTICK_PERIOD_MS);      // delay 20ms
     }
 }

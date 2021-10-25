@@ -11,7 +11,7 @@ CRtspSession::CRtspSession(WiFiClient& aClient, AudioStreamer* aStreamer) :
 
     m_RtspClient = &m_Client;
     m_RtspSessionID  = getRandom();         // create a session ID
-    m_RtspSessionID |= 0x80000000;
+    //m_RtspSessionID |= 0x80000000;
     m_StreamID       = -1;
     m_ClientRTPPort  =  0;
     m_ClientRTCPPort =  0;
@@ -239,7 +239,7 @@ RTSP_CMD_TYPES CRtspSession::Handle_RtspRequest(char const * aRequest, unsigned 
         case RTSP_DESCRIBE: { Handle_RtspDESCRIBE(); break; };
         case RTSP_SETUP:    { Handle_RtspSETUP();    break; };
         case RTSP_PLAY:     { Handle_RtspPLAY();     break; };
-        // TODO handle TEARDOWN
+        case RTSP_TEARDOWN: { Handle_RtspTEARDOWN(); break; };
         default: {};
         };
     };
@@ -352,9 +352,9 @@ void CRtspSession::Handle_RtspSETUP()
              "\r\n",
              m_CSeq,
              DateHeader(),
-             12345678,
+             m_RtspSessionID,
              Transport
-             //m_RtspSessionID);
+             
              );
 
     socketsend(m_RtspClient,Response,strlen(Response));
@@ -366,18 +366,41 @@ void CRtspSession::Handle_RtspPLAY()
 
     // simulate SETUP server response
     snprintf(Response,sizeof(Response),
-             "RTSP/1.0 200 OK\r\nCSeq: %s\r\n"
-             "%s\r\n"
-             "Range: npt=0.000-\r\n"
-             "Session: %i\r\n"
-             "RTP-Info: url=rtsp://127.0.0.1:8554/mjpeg/1/track1\r\n\r\n",          // TODO whats thisß
+             "RTSP/1.0 200 OK\r\n"
+             "CSeq: %s\r\n"
+             //"%s\r\n"
+             //"Range: npt=0.000-\r\n"
+             "Session: %i\r\n\r\n"
+             //"RTP-Info: url=rtsp://127.0.0.1:8554/%s=0\r\n\r\n",          // TODO whats this
+             ,
              m_CSeq,
-             DateHeader(),
-             m_RtspSessionID);
+             //DateHeader(),
+             m_RtspSessionID
+             //STD_URL_PRE_SUFFIX
+             );
 
     socketsend(m_RtspClient,Response,strlen(Response));
 
+    printf("Sent PLAY response:\n %s\n", Response);
+
     m_Streamer->Start();
+}
+
+void CRtspSession::Handle_RtspTEARDOWN()
+{
+    static char Response[1024];
+
+    m_Streamer->Stop();
+
+    // simulate SETUP server response
+    snprintf(Response,sizeof(Response),
+             "RTSP/1.0 200 OK\r\n"
+             "CSeq: %s\r\n\r\n",
+             m_CSeq);
+
+    socketsend(m_RtspClient,Response,strlen(Response));
+
+    m_sessionOpen = false;
 }
 
 char const * CRtspSession::DateHeader()
@@ -417,7 +440,6 @@ bool CRtspSession::handleRequests(uint32_t readTimeoutMs)
                 m_streaming = true;
             else if (C == RTSP_TEARDOWN) {
                 m_stopped = true;
-                m_Streamer->Stop();
             }
                 
         }
