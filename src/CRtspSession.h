@@ -37,6 +37,9 @@ public:
     bool m_streaming;
     bool m_stopped;
     bool m_sessionOpen = true;
+    char RecvBuf[RTSP_BUFFER_SIZE];
+    char CurRequest[RTSP_BUFFER_SIZE];
+    char CmdName[RTSP_PARAM_STRING_MAX];
 
     void    InitTransport(u_short aRtpPort, u_short aRtcpPort);
 

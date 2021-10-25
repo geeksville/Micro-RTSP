@@ -26,7 +26,7 @@ AudioStreamer::AudioStreamer()
     }
     */
 
-    if (xTaskCreatePinnedToCore(doRTPStream, "RTPTask", 4096, (void*)this, 1, &m_RTPTask, 1) != pdPASS) {
+    if (xTaskCreatePinnedToCore(doRTPStream, "RTPTask", 8192, (void*)this, 10, &m_RTPTask, 0) != pdPASS) {
         printf("ERROR: Task for streaming data could not be created\n");   
     }
     
@@ -122,6 +122,7 @@ int AudioStreamer::SendRtpPacketDirect() {
         return -1;
     }
     unsigned char * dataBuf = (RtpBuf + HEADER_SIZE);
+    //printf("Trying to read %i bytes from streaming source\n", m_fragmentSize);
     int samples = m_audioSource->readDataTo(dataBuf, m_fragmentSize);
     int byteLen = samples * m_audioSource->getSampleSizeBytes();
 
@@ -212,8 +213,10 @@ void AudioStreamer::Start() {
     printf("Starting RTP Stream\n");
     if (m_audioSource != NULL) {
         m_audioSource->start();
+        vTaskResume(m_RTPTask);
+    } else {
+        printf("Error: no streaming source\n");
     }
-    vTaskResume(m_RTPTask);
 }
 
 void AudioStreamer::Stop() {
@@ -226,29 +229,33 @@ void AudioStreamer::Stop() {
 
 void AudioStreamer::doRTPStream(void * audioStreamerObj) {
     AudioStreamer * streamer = (AudioStreamer*)audioStreamerObj;
-    int bytes = 0;
     int samples;
-    int sent = 0;
-    int sampleCount = 0;
     TickType_t prevWakeTime =  xTaskGetTickCount();
+
 
     vTaskSuspend(NULL);     // only start when Start() is called
 
     while(1) {
         
         samples = streamer->SendRtpPacketDirect();
+        //int after = xTaskGetTickCount();
+        //printf("RTP packet sent at %i\n", after);
         if (samples < 0) {
             printf("Direct sending of RTP stream failed\n");
         } else if (samples > 0) {           // samples have been sent
             streamer->m_Timestamp += samples;        // no of samples sent
-            printf("%i samples sent (%ims); timestamp: %i\n", samples, samples / 16, streamer->m_Timestamp);
+            //printf("%i samples sent (%ims); timestamp: %i\n", samples, samples / 16, streamer->m_Timestamp);
 
             // delay a little less than 20ms
-            if (prevWakeTime + 17/portTICK_PERIOD_MS > xTaskGetTickCount()) {
+            if (prevWakeTime + 20/portTICK_PERIOD_MS > xTaskGetTickCount()) {
                 printf("RTP Task is too slow!\n");
+                // reset prevWakeTime to not get this message repeatedly
+                prevWakeTime = xTaskGetTickCount() - 20/portTICK_PERIOD_MS;
             }
             vTaskDelayUntil(&prevWakeTime, 17/portTICK_PERIOD_MS);
         }
         
     }
+
+    printf("Error: %s is returning\n", pcTaskGetTaskName(NULL));
 }

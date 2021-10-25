@@ -46,7 +46,7 @@ int RTSPServer::runAsync() {
         return error;
     }
 
-    if (xTaskCreate(RTSPServer::serverThread, "RTSPServerThread", 10000, (void*)this, 0, &workerHandle) != pdPASS) {
+    if (xTaskCreatePinnedToCore(RTSPServer::serverThread, "RTSPServerThread", 10000, (void*)this, 5, &workerHandle, 1) != pdPASS) {
         printf("Couldn't create server thread");
         return -1;
     } 
@@ -63,21 +63,32 @@ void RTSPServer::serverThread(void* server_obj) {
 
     while (true)
     {   // loop forever to accept client connections
-        // TODO individual sockets
-        server->ClientSocket = new WiFiClient(accept(server->MasterSocket->fd(),(struct sockaddr*)&server->ClientAddr,&ClientAddrLen));
-        printf("Client connected. Client address: %s\n",inet_ntoa(server->ClientAddr.sin_addr));
-        if (xTaskCreate(RTSPServer::workerThread, "workerThread", 8000, (void*)server, 0, NULL) != pdPASS) {
-            printf("Couldn't create workerThread\n");
+        // only allow one client at a time
+        
+        if (server->numClients == 0) {
+            server->ClientSocket = new WiFiClient(accept(server->MasterSocket->fd(),(struct sockaddr*)&server->ClientAddr,&ClientAddrLen));
+            printf("Client connected. Client address: %s\n",inet_ntoa(server->ClientAddr.sin_addr));
+            if (xTaskCreatePinnedToCore(RTSPServer::workerThread, "workerThread", 8000, (void*)server, 8, NULL, 1) != pdPASS) {
+                printf("Couldn't create workerThread\n");
+            } else {
+                printf("Created workerThread\n");
+                server->numClients++;
+            }
         } else {
-            printf("Created workerThread\n");
-            server->numClients++;
+            vTaskDelay(50);
         }
+
+        vTaskDelay(10);
+        
         //vTaskResume(workerHandle);
         // TODO only ONE task used repeatedly
     }
 
+
     // should never be reached
     closesocket(server->MasterSocket);
+
+    printf("Error: %s is returning\n", pcTaskGetTaskName(NULL));
 }
 
 
@@ -91,12 +102,15 @@ void RTSPServer::workerThread(void * server_obj) {
         // TODO check if everything is ok to go
         printf("Client connected\n");
 
-        CRtspSession rtsp = CRtspSession(*s, streamer);     // our threads RTSP session and state
+        CRtspSession * rtsp = new CRtspSession(*s, streamer);     // our threads RTSP session and state
 
-        while (rtsp.m_sessionOpen)
+        printf("Session ready\n");
+
+        while (rtsp->m_sessionOpen)
         {
             uint32_t timeout = 400;
-            if(!rtsp.handleRequests(timeout)) {
+            //printf("Handling incoming requests\n");
+            if(!rtsp->handleRequests(timeout)) {
                 //printf("Request handling returned false\n");
                 struct timeval now;
                 gettimeofday(&now, NULL); // crufty msecish timer
@@ -107,15 +121,19 @@ void RTSPServer::workerThread(void * server_obj) {
                 //printf("Request handling successful\n");
             }
 
-            if (rtsp.m_streaming) {
+            if (rtsp->m_streaming) {
                 // Stream RTP data
                 //streamer->Start();
             }
+
+            vTaskDelay(10/portTICK_PERIOD_MS);
         }
 
     
     // should never be reached
-    log_e("workerThread stopped, deleting task");
+    printf("workerThread stopped, deleting task\n");
+    delete rtsp;
+    server->numClients--;
 
     vTaskDelete(NULL);
 }
