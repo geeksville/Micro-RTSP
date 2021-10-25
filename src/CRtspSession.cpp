@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <time.h>
 
-CRtspSession::CRtspSession(WiFiClient& aClient, CStreamer * aStreamer) : LinkedListElement(aStreamer->getClientsListHead()),
+CRtspSession::CRtspSession(WiFiClient& aClient, AudioStreamer* aStreamer) :
  m_Client(aClient),
  m_Streamer(aStreamer)
 {
@@ -15,7 +15,6 @@ CRtspSession::CRtspSession(WiFiClient& aClient, CStreamer * aStreamer) : LinkedL
     m_StreamID       = -1;
     m_ClientRTPPort  =  0;
     m_ClientRTCPPort =  0;
-    m_TcpTransport   =  false;
     m_streaming = false;
     m_stopped = false;
 
@@ -25,7 +24,7 @@ CRtspSession::CRtspSession(WiFiClient& aClient, CStreamer * aStreamer) : LinkedL
 
 CRtspSession::~CRtspSession()
 {
-    m_Streamer->ReleaseUdpTransport();
+    //m_Streamer->ReleaseUdpTransport();
     closesocket(m_RtspClient);
 };
 
@@ -107,12 +106,6 @@ bool CRtspSession::ParseRtspRequest(char const * aRequest, unsigned aRequestSize
     if (strstr(CmdName,"PLAY")      != nullptr) m_RtspCmdType = RTSP_PLAY; else
     if (strstr(CmdName,"TEARDOWN")  != nullptr) m_RtspCmdType = RTSP_TEARDOWN;
 
-    // check whether the request contains transport information (UDP or TCP)
-    if (m_RtspCmdType == RTSP_SETUP)
-    {
-        TmpPtr = strstr(CurRequest,"RTP/AVP/TCP");
-        if (TmpPtr != nullptr) m_TcpTransport = true; else m_TcpTransport = false;
-    };
 
     // Skip over the prefix of any "rtsp://" or "rtsp:/" URL that follows:
     unsigned j = i+1;
@@ -315,10 +308,11 @@ void CRtspSession::InitTransport(u_short aRtpPort, u_short aRtcpPort)
     m_RtpClientPort  = aRtpPort;
     m_RtcpClientPort = aRtcpPort;
 
-    if (!m_TcpTransport)
-    {   // allocate port pairs for RTP/RTCP ports in UDP transport mode
-        m_Streamer->InitUdpTransport();
-    };
+    IPADDRESS clientIP;
+    IPPORT clientPort;
+    socketpeeraddr(m_RtspClient, &clientIP, &clientPort);
+
+    m_Streamer->InitUdpTransport(clientIP, m_RtpClientPort);
 };
 
 void CRtspSession::Handle_RtspSETUP()
@@ -330,10 +324,7 @@ void CRtspSession::Handle_RtspSETUP()
     InitTransport(m_ClientRTPPort,m_ClientRTCPPort);
 
     // simulate SETUP server response
-    if (m_TcpTransport)
-        snprintf(Transport,sizeof(Transport),"RTP/AVP/TCP;unicast;interleaved=0-1");
-    else
-        snprintf(Transport,sizeof(Transport),
+    snprintf(Transport,sizeof(Transport),
                  "RTP/AVP;unicast;destination=127.0.0.1;source=127.0.0.1;client_port=%i-%i;server_port=%i-%i",
                  m_ClientRTPPort,
                  m_ClientRTCPPort,
@@ -416,7 +407,7 @@ bool CRtspSession::handleRequests(uint32_t readTimeoutMs)
     }
     else  {
         // Timeout on read
-
+        printf("RTSP read timeout\n");
         return false;
     }
 }

@@ -1,7 +1,6 @@
 #pragma once
 
-#include "LinkedListElement.h"
-#include "CStreamer.h"
+#include "AudioStreamer.h"
 #include "platglue.h"
 
 // supported command types
@@ -19,10 +18,10 @@ enum RTSP_CMD_TYPES
 #define RTSP_PARAM_STRING_MAX  200
 #define MAX_HOSTNAME_LEN       256
 
-class CRtspSession : public LinkedListElement
+class CRtspSession 
 {
 public:
-    CRtspSession(WiFiClient& aRtspClient, CStreamer * aStreamer);
+    CRtspSession(WiFiClient& aRtspClient, AudioStreamer* aStreamer);
     ~CRtspSession();
 
     RTSP_CMD_TYPES Handle_RtspRequest(char const * aRequest, unsigned aRequestSize);
@@ -40,7 +39,6 @@ public:
 
     void    InitTransport(u_short aRtpPort, u_short aRtcpPort);
 
-    bool isTcpTransport() { return m_TcpTransport; }
     SOCKET& getClient() { return m_RtspClient; }
     
     uint16_t getRtpClientPort() { return m_RtpClientPort; }
@@ -62,8 +60,7 @@ private:
     int m_StreamID;                                           // number of simulated stream of that session
     IPPORT m_ClientRTPPort;                                  // client port for UDP based RTP transport
     IPPORT m_ClientRTCPPort;                                 // client port for UDP based RTCP transport
-    bool m_TcpTransport;                                      // if Tcp based streaming was activated
-    CStreamer    * m_Streamer;                                // the UDP or TCP streamer of that session
+    AudioStreamer * m_Streamer;                                // the UDP streamer of that session
 
     // parameters of the last received RTSP request
 
