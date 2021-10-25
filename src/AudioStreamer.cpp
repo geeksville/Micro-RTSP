@@ -91,13 +91,19 @@ AudioStreamer::AudioStreamer()
         printf("ERROR: Queue for streaming data could not be created\n");
     }
 
-    if (xTaskCreate(doRTPStream, "RTPTask", 4096, (void*)this, 1, &m_RTPTask) != pdPASS) {
+    if (xTaskCreatePinnedToCore(doRTPStream, "RTPTask", 4096, (void*)this, 1, &m_RTPTask, 1) != pdPASS) {
         printf("ERROR: Task for streaming data could not be created\n");   
     }
+    
+    this->m_fragmentSize = m_samplingRate / 50;
+    this->m_fragmentSizeBytes = m_fragmentSize * sizeof(int16_t);
+
+    printf("Audio streamer created. Sampling rate: %i, Fragment size: %i (%i bytes)\n", m_samplingRate, m_fragmentSize, m_fragmentSizeBytes);
 }
 
 AudioStreamer::AudioStreamer(IAudioSource * source) : AudioStreamer() {
     this->m_audioSource = source;
+    this->m_samplingRate = source->getSampleRate();
 }
 
 AudioStreamer::~AudioStreamer()
@@ -105,17 +111,16 @@ AudioStreamer::~AudioStreamer()
     
 }
 
+int AudioStreamer::getSampleRate() {
+    return this->m_samplingRate;
+}
+
 int AudioStreamer::SendRtpPacket(unsigned const char* data, int len)
 {
-    // printf("CStreamer::SendRtpPacket offset:%d - begin\n", fragmentOffset);
-#define KRtpHeaderSize 12           // size of the RTP header
-
-#define MAX_FRAGMENT_SIZE 640 // this should match up to about 20ms
-
     static char RtpBuf[2048]; // Note: we assume single threaded, this large buf we keep off of the tiny stack
-    if (len > MAX_FRAGMENT_SIZE) len = MAX_FRAGMENT_SIZE;
+    if (len > m_fragmentSizeBytes) len = m_fragmentSizeBytes;
 
-    int RtpPacketSize = len + KRtpHeaderSize;
+    int RtpPacketSize = len + HEADER_SIZE;
 
     memset(RtpBuf,0x00,sizeof(RtpBuf));
 
@@ -155,11 +160,7 @@ int AudioStreamer::SendRtpPacket(unsigned const char* data, int len)
 }
 
 int AudioStreamer::SendRtpPacketDirect() {
-    #define HEADER_SIZE 12           // size of the RTP header
-    #define MAX_SAMPLES 320         // this should match up to about 20ms
-
     static unsigned char RtpBuf[2048]; // Note: we assume single threaded, this large buf we keep off of the tiny stack
-
 
     // Prepare the 12 byte RTP header
     RtpBuf[0]  = 0x80;                               // RTP version
@@ -177,14 +178,33 @@ int AudioStreamer::SendRtpPacketDirect() {
 
     // append data to header
     if (m_audioSource == NULL) return -1;
-    int len = m_audioSource->readDataTo(RtpBuf + HEADER_SIZE, MAX_SAMPLES * sizeof(int16_t));
-    printf("total bytes: %i, byte 0 : %i\n", len, RtpBuf[HEADER_SIZE]);
+    // TODO this is a workaround, because the sample size is 32 bit, not 16
+    int32_t tempBuf[m_fragmentSize];
+    int byteLen = m_audioSource->readDataTo((unsigned char*)tempBuf, m_fragmentSize * sizeof(int32_t));
+    if (byteLen <= 0) {
+        return byteLen;
+    }
+
+    int samples = byteLen / sizeof(int32_t);
+    int16_t * dataBuf = (int16_t*)(RtpBuf + HEADER_SIZE);
+    for (int i = 0; i < samples; i++) {
+        dataBuf[i] = 0xFFFF & (tempBuf[i] >> 16);
+
+        // gain factor
+        if (m_gainFactor < 0)
+            dataBuf[i] = dataBuf[i] >> -m_gainFactor;
+        else 
+            dataBuf[i] = dataBuf[i] << m_gainFactor;
+    }
+    byteLen /= 2;       // samples down from 4 bytes to 2 bytes width
+    //int len = m_audioSource->readDataTo(RtpBuf + HEADER_SIZE, MAX_SAMPLES * sizeof(int16_t));
+    //printf("total bytes: %i, byte 0 : %i\n", len, RtpBuf[HEADER_SIZE]);
 
     m_SequenceNumber++;                              // prepare the packet counter for the next packet
 
-    udpsocketsend(m_RtpSocket, RtpBuf, HEADER_SIZE + len, m_ClientIP, m_ClientPort);
+    udpsocketsend(m_RtpSocket, RtpBuf, HEADER_SIZE + byteLen, m_ClientIP, m_ClientPort);
 
-    return len;
+    return samples;
 }
 
 u_short AudioStreamer::GetRtpServerPort()
@@ -304,16 +324,19 @@ void AudioStreamer::doRTPStream(void * audioStreamerObj) {
         bytes = streamer->SendRtpPacket((unsigned char*)&testData[sent], (1024-sent) * sizeof(int16_t));
         sent += bytes;
         */
-        bytes = streamer->SendRtpPacketDirect();
-        if (bytes < 0) {
+        samples = streamer->SendRtpPacketDirect();
+        if (samples < 0) {
             printf("Direct sending of RTP stream failed\n");
-        } else {
-            samples = bytes / sizeof(int16_t);
+        } else if (samples > 0) {           // samples have been sent
             streamer->m_Timestamp += samples;        // no of samples sent
-            //printf("%i samples sent (%ims); timestamp: %i\n", samples, samples / 16, streamer->m_Timestamp);
-            
-        }
+            printf("%i samples sent (%ims); timestamp: %i\n", samples, samples / 16, streamer->m_Timestamp);
 
-        vTaskDelayUntil(&prevWakeTime, 20/portTICK_PERIOD_MS);      // delay 20ms
+            // delay a little less than 20ms
+            if (prevWakeTime + 17/portTICK_PERIOD_MS > xTaskGetTickCount()) {
+                printf("RTP Task is too slow!\n");
+            }
+            vTaskDelayUntil(&prevWakeTime, 17/portTICK_PERIOD_MS);
+        }
+        
     }
 }

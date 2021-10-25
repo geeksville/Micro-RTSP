@@ -25,6 +25,8 @@ public:
     int SendRtpPacket(unsigned const char* data, int len);
     int SendRtpPacketDirect();
 
+    int getSampleRate();
+
     void Start();
 
     void Stop();
@@ -33,6 +35,11 @@ private:
     static void doRTPStream(void * audioStreamerObj);
 
     IAudioSource * m_audioSource = NULL;
+    int m_samplingRate = 16000;
+    int m_gainFactor = -1;
+    int m_fragmentSize;
+    int m_fragmentSizeBytes;
+    const int HEADER_SIZE = 12;           // size of the RTP header
 
     QueueHandle_t m_streamingData;
     TaskHandle_t m_RTPTask;

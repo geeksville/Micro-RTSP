@@ -287,14 +287,17 @@ void CRtspSession::Handle_RtspDESCRIBE()
              "t=0 0\r\n"                            // start / stop - 0 -> unbounded and permanent session
              "m=audio 0 RTP/AVP 11\r\n"             // currently we just handle UDP sessions
              // Media Attributes
-             "a=rtpmap:11 L16/16000/1\r\n"
-             "a=rate:16000\r\n"
+             "a=rtpmap:11 L16/%i/1\r\n"
+             "a=rate:%i\r\n"
              "a=control:%s=0"
              //"a=ftmp"
 
              ,
              rand() & 0xFF,
-             OBuf, STD_URL_PRE_SUFFIX);
+             OBuf, 
+             m_Streamer->getSampleRate(),
+             m_Streamer->getSampleRate(),
+             STD_URL_PRE_SUFFIX);
 
     snprintf(URLBuf,sizeof(URLBuf),
              "rtsp://%s",
@@ -452,7 +455,7 @@ bool CRtspSession::handleRequests(uint32_t readTimeoutMs)
     }
     else  {
         // Timeout on read
-        printf("RTSP read timeout\n");
+        //printf("RTSP read timeout\n");
         return false;
     }
 }

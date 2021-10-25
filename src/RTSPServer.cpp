@@ -97,14 +97,14 @@ void RTSPServer::workerThread(void * server_obj) {
         {
             uint32_t timeout = 400;
             if(!rtsp.handleRequests(timeout)) {
-                printf("Request handling returned false\n");
+                //printf("Request handling returned false\n");
                 struct timeval now;
                 gettimeofday(&now, NULL); // crufty msecish timer
                 //uint32_t msec = now.tv_sec * 1000 + now.tv_usec / 1000;
                 //rtsp.broadcastCurrentFrame(msec);
                 //printf("Audio File has been sent\n");
             } else {
-                printf("Request handling successful\n");
+                //printf("Request handling successful\n");
             }
 
             if (rtsp.m_streaming) {
