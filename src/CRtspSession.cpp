@@ -255,7 +255,7 @@ void CRtspSession::Handle_RtspOPTION()
 
     snprintf(Response,sizeof(Response),
              "RTSP/1.0 200 OK\r\nCSeq: %s\r\n"
-             "Public: DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE\r\n\r\n",m_CSeq);
+             "Public: DESCRIBE, SETUP, TEARDOWN, PLAY\r\n\r\n",m_CSeq);
 
     socketsend(m_RtspClient,Response,strlen(Response));
 }
