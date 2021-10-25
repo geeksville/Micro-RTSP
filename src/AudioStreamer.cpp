@@ -91,7 +91,7 @@ AudioStreamer::AudioStreamer()
         printf("ERROR: Queue for streaming data could not be created\n");
     }
 
-    if (xTaskCreate(doRTPStram, "RTPTask", 4096, (void*)this, 1, &m_RTPTask) != pdPASS) {
+    if (xTaskCreate(doRTPStream, "RTPTask", 4096, (void*)this, 1, &m_RTPTask) != pdPASS) {
         printf("ERROR: Task for streaming data could not be created\n");   
     }
 };
@@ -106,7 +106,7 @@ int AudioStreamer::SendRtpPacket(unsigned const char* data, int len)
     // printf("CStreamer::SendRtpPacket offset:%d - begin\n", fragmentOffset);
 #define KRtpHeaderSize 12           // size of the RTP header
 
-#define MAX_FRAGMENT_SIZE 640 // FIXME, pick more carefully
+#define MAX_FRAGMENT_SIZE 640 // this should match up to about 20ms
 
     static char RtpBuf[2048]; // Note: we assume single threaded, this large buf we keep off of the tiny stack
     if (len > MAX_FRAGMENT_SIZE) len = MAX_FRAGMENT_SIZE;
@@ -143,7 +143,7 @@ int AudioStreamer::SendRtpPacket(unsigned const char* data, int len)
     //if (m_Client->m_streaming && !session->m_stopped) {
         // UDP - we send just the buffer by skipping the 4 byte RTP over RTSP header
         //socketpeeraddr(session->getClient(), &otherip, &otherport);
-    udpsocketsend(m_RtpSocket,RtpBuf,RtpPacketSize, m_ClientIP, m_ClientPort);
+    udpsocketsend(m_RtpSocket, RtpBuf, RtpPacketSize, m_ClientIP, m_ClientPort);
     //}
 
     // printf("CStreamer::SendRtpPacket offset:%d - end\n", fragmentOffset);
@@ -194,7 +194,7 @@ bool AudioStreamer::InitUdpTransport(IPADDRESS aClientIP, IPPORT aClientPort)
     };
     ++m_udpRefCount;
 
-    printf("RTP Streamer set up with server Port %i and client Port %i\n", m_RtpServerPort, aClientPort);
+    printf("RTP Streamer set up with client IP %s and client Port %i\n", inet_ntoa(m_ClientIP), m_ClientPort);
 
     return true;
 }
@@ -234,7 +234,7 @@ void AudioStreamer::Stop() {
     vTaskSuspend(m_RTPTask);
 }
 
-void AudioStreamer::doRTPStram(void * audioStreamerObj) {
+void AudioStreamer::doRTPStream(void * audioStreamerObj) {
     AudioStreamer * streamer = (AudioStreamer*)audioStreamerObj;
     int bytes = 0;
     int sent = 0;
@@ -252,6 +252,7 @@ void AudioStreamer::doRTPStram(void * audioStreamerObj) {
     vTaskSuspend(NULL);     // only start when Start() is called
 
     while(1) {
+        
         // if something in buffer, stream it
         if (sent >= 1024) {
             sent = 0;

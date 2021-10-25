@@ -25,7 +25,7 @@ public:
     void Stop();
 
 private:
-    static void doRTPStram(void * audioStreamerObj);
+    static void doRTPStream(void * audioStreamerObj);
 
     QueueHandle_t m_streamingData;
     TaskHandle_t m_RTPTask;
