@@ -1,3 +1,14 @@
+/*
+ * Author: Thomas Pfitzinger
+ * github: https://github.com/Tomp0801/Micro-RTSP-Audio
+ *
+ * Based on Micro-RTSP library for video streaming by Kevin Hester:
+ * 
+ * https://github.com/geeksville/Micro-RTSP
+ * 
+ * Copyright 2018 S. Kevin Hester-Chow, kevinh@geeksville.com (MIT License)
+ */
+
 #include "AudioStreamer.h"
 #include <stdio.h>
 
