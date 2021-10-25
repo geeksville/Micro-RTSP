@@ -15,7 +15,7 @@ enum RTSP_CMD_TYPES
 };
 
 #define RTSP_BUFFER_SIZE       10000    // for incoming requests, and outgoing responses
-#define RTSP_PARAM_STRING_MAX  200
+#define RTSP_PARAM_STRING_MAX  100
 #define MAX_HOSTNAME_LEN       256
 
 class CRtspSession 
@@ -37,8 +37,8 @@ public:
     bool m_streaming;
     bool m_stopped;
     bool m_sessionOpen = true;
-    char RecvBuf[RTSP_BUFFER_SIZE];
-    char CurRequest[RTSP_BUFFER_SIZE];
+    char * RecvBuf;
+    char * CurRequest;
     char CmdName[RTSP_PARAM_STRING_MAX];
 
     void    InitTransport(u_short aRtpPort, u_short aRtcpPort);

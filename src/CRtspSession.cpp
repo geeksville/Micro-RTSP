@@ -9,6 +9,10 @@ CRtspSession::CRtspSession(WiFiClient& aClient, AudioStreamer* aStreamer) :
     printf("Creating RTSP session\n");
     Init();
 
+    // create buffers in heap
+    RecvBuf = new char[RTSP_BUFFER_SIZE];
+    CurRequest = new char[RTSP_BUFFER_SIZE];
+
     m_RtspClient = &m_Client;
     m_RtspSessionID  = getRandom();         // create a session ID
     //m_RtspSessionID |= 0x80000000;
@@ -26,6 +30,9 @@ CRtspSession::~CRtspSession()
 {
     //m_Streamer->ReleaseUdpTransport();
     closesocket(m_RtspClient);
+    
+    delete RecvBuf;
+    delete CurRequest;
 };
 
 void CRtspSession::Init()
@@ -431,8 +438,8 @@ bool CRtspSession::handleRequests(uint32_t readTimeoutMs)
         pcTaskGetTaskName(NULL),     
         uxTaskGetStackHighWaterMark(NULL) / 1000     
     );*/
-    memset(RecvBuf,0x00,sizeof(RecvBuf));
-    int res = socketread(m_RtspClient,RecvBuf,sizeof(RecvBuf), readTimeoutMs);
+    memset(RecvBuf,0x00, RTSP_BUFFER_SIZE);
+    int res = socketread(m_RtspClient, RecvBuf, RTSP_BUFFER_SIZE, readTimeoutMs);
     if(res > 0) {
         // we filter away everything which seems not to be an RTSP command: O-ption, D-escribe, S-etup, P-lay, T-eardown
         if ((RecvBuf[0] == 'O') || (RecvBuf[0] == 'D') || (RecvBuf[0] == 'S') || (RecvBuf[0] == 'P') || (RecvBuf[0] == 'T'))

@@ -34,7 +34,8 @@ public:
 private:
     static void doRTPStream(void * audioStreamerObj);
 
-    const int STREAMING_BUFFER_SIZE = 1024;
+    const int STREAMING_BUFFER_SIZE = 2048;
+    unsigned char * RtpBuf;
 
     IAudioSource * m_audioSource = NULL;
     int m_samplingRate = 16000;

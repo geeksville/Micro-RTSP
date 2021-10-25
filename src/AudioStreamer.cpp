@@ -26,6 +26,8 @@ AudioStreamer::AudioStreamer()
     }
     */
 
+    RtpBuf = new unsigned char[STREAMING_BUFFER_SIZE];
+
     esp_timer_create_args_t timer_args;
     timer_args.callback = AudioStreamer::doRTPStream;
     timer_args.name = "RTP_timer";
@@ -49,7 +51,7 @@ AudioStreamer::AudioStreamer(IAudioSource * source) : AudioStreamer() {
 
 AudioStreamer::~AudioStreamer()
 {
-    
+    delete RtpBuf;
 }
 
 int AudioStreamer::getSampleRate() {
@@ -105,9 +107,8 @@ int AudioStreamer<SAMPLE_TYPE>::SendRtpPacket(SAMPLE_TYPE * data, int len)
 */
 
 int AudioStreamer::SendRtpPacketDirect() {
-    static unsigned char RtpBuf[2048]; // Note: we assume single threaded, this large buf we keep off of the tiny stack
 
-    // Prepare the 12 byte RTP header
+    // Prepare the 12 byte RTP header TODO this can be optimized, some is static
     RtpBuf[0]  = 0x80;                               // RTP version
     RtpBuf[1]  = 0x0b | 0x80;                               // L16 payload (11) and no marker bit
     RtpBuf[3]  = m_SequenceNumber & 0x0FF;           // each packet is counted with a sequence counter
@@ -126,10 +127,12 @@ int AudioStreamer::SendRtpPacketDirect() {
         log_e("No audio source provided");
         return -1;
     }
-    unsigned char * dataBuf = (RtpBuf + HEADER_SIZE);
-    //printf("Trying to read %i bytes from streaming source\n", m_fragmentSize);
-    int samples = m_audioSource->readDataTo(dataBuf, m_fragmentSize);
+    //unsigned char * dataBuf = ((unsigned char*)RtpBuf + HEADER_SIZE);
+    unsigned char * dataBuf = &RtpBuf[HEADER_SIZE];
+    
+    int samples = m_audioSource->readDataTo((void*)dataBuf, m_fragmentSize);
     int byteLen = samples * m_audioSource->getSampleSizeBytes();
+    printf("Read %i of %i bytes from streaming source\n", samples, m_fragmentSize);
 
     m_SequenceNumber++;                              // prepare the packet counter for the next packet
 
