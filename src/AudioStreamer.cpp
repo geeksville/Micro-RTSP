@@ -94,12 +94,16 @@ AudioStreamer::AudioStreamer()
     if (xTaskCreate(doRTPStream, "RTPTask", 4096, (void*)this, 1, &m_RTPTask) != pdPASS) {
         printf("ERROR: Task for streaming data could not be created\n");   
     }
-};
+}
+
+AudioStreamer::AudioStreamer(IAudioSource * source) : AudioStreamer() {
+    this->m_audioSource = source;
+}
 
 AudioStreamer::~AudioStreamer()
 {
     
-};
+}
 
 int AudioStreamer::SendRtpPacket(unsigned const char* data, int len)
 {
@@ -148,7 +152,40 @@ int AudioStreamer::SendRtpPacket(unsigned const char* data, int len)
 
     // printf("CStreamer::SendRtpPacket offset:%d - end\n", fragmentOffset);
     return len;
-};
+}
+
+int AudioStreamer::SendRtpPacketDirect() {
+    #define HEADER_SIZE 12           // size of the RTP header
+    #define MAX_SAMPLES 320         // this should match up to about 20ms
+
+    static unsigned char RtpBuf[2048]; // Note: we assume single threaded, this large buf we keep off of the tiny stack
+
+
+    // Prepare the 12 byte RTP header
+    RtpBuf[0]  = 0x80;                               // RTP version
+    RtpBuf[1]  = 0x0b | 0x80;                               // L16 payload (11) and no marker bit
+    RtpBuf[3]  = m_SequenceNumber & 0x0FF;           // each packet is counted with a sequence counter
+    RtpBuf[2]  = m_SequenceNumber >> 8;
+    RtpBuf[4]  = (m_Timestamp & 0xFF000000) >> 24;   // each image gets a timestamp
+    RtpBuf[5]  = (m_Timestamp & 0x00FF0000) >> 16;
+    RtpBuf[6] = (m_Timestamp & 0x0000FF00) >> 8;
+    RtpBuf[7] = (m_Timestamp & 0x000000FF);
+    RtpBuf[8] = 0x13;                               // 4 byte SSRC (sychronization source identifier)
+    RtpBuf[9] = 0xf9;                               // we just an arbitrary number here to keep it simple
+    RtpBuf[10] = 0x7e;
+    RtpBuf[11] = 0x67;
+
+    // append data to header
+    if (m_audioSource == NULL) return -1;
+    int len = m_audioSource->readDataTo(RtpBuf + HEADER_SIZE, MAX_SAMPLES * sizeof(int16_t));
+    printf("total bytes: %i, byte 0 : %i\n", len, RtpBuf[HEADER_SIZE]);
+
+    m_SequenceNumber++;                              // prepare the packet counter for the next packet
+
+    udpsocketsend(m_RtpSocket, RtpBuf, HEADER_SIZE + len, m_ClientIP, m_ClientPort);
+
+    return len;
+}
 
 u_short AudioStreamer::GetRtpServerPort()
 {
@@ -237,6 +274,7 @@ void AudioStreamer::Stop() {
 void AudioStreamer::doRTPStream(void * audioStreamerObj) {
     AudioStreamer * streamer = (AudioStreamer*)audioStreamerObj;
     int bytes = 0;
+    int samples;
     int sent = 0;
     int sampleCount = 0;
     TickType_t prevWakeTime =  xTaskGetTickCount();
@@ -254,6 +292,7 @@ void AudioStreamer::doRTPStream(void * audioStreamerObj) {
     while(1) {
         
         // if something in buffer, stream it
+        /*
         if (sent >= 1024) {
             sent = 0;
             sampleCount++;
@@ -264,7 +303,17 @@ void AudioStreamer::doRTPStream(void * audioStreamerObj) {
         }
         bytes = streamer->SendRtpPacket((unsigned char*)&testData[sent], (1024-sent) * sizeof(int16_t));
         sent += bytes;
-        streamer->m_Timestamp += bytes >> 1;        // no of samples sent
+        */
+        bytes = streamer->SendRtpPacketDirect();
+        if (bytes < 0) {
+            printf("Direct sending of RTP stream failed\n");
+        } else {
+            samples = bytes / sizeof(int16_t);
+            streamer->m_Timestamp += samples;        // no of samples sent
+            //printf("%i samples sent (%ims); timestamp: %i\n", samples, samples / 16, streamer->m_Timestamp);
+            
+        }
+
         vTaskDelayUntil(&prevWakeTime, 20/portTICK_PERIOD_MS);      // delay 20ms
     }
 }

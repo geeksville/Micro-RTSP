@@ -1,13 +1,17 @@
 #pragma once
 
 #include "platglue.h"
+#include "IAudioSource.h"
 
 #define STREAMING_BUFFER_SIZE           1024
+
+// TODO allow other types than int16_t
 
 class AudioStreamer
 {
 public:
     AudioStreamer();
+    AudioStreamer(IAudioSource * source);
     virtual ~AudioStreamer();
 
     u_short GetRtpServerPort();
@@ -19,6 +23,7 @@ public:
     int AddToStream(uint16_t * data, int len);
 
     int SendRtpPacket(unsigned const char* data, int len);
+    int SendRtpPacketDirect();
 
     void Start();
 
@@ -26,6 +31,8 @@ public:
 
 private:
     static void doRTPStream(void * audioStreamerObj);
+
+    IAudioSource * m_audioSource = NULL;
 
     QueueHandle_t m_streamingData;
     TaskHandle_t m_RTPTask;
