@@ -69,6 +69,7 @@ inline ssize_t udpsocketsend(UDPSOCKET sockfd, const void *buf, size_t len,
 {
     sockfd->beginPacket(destaddr, destport);
     sockfd->write((const uint8_t *)  buf, len);
+    delay(2);  // give esp32 time to send udp buffer before ending
     if(!sockfd->endPacket())
         printf("error sending udp packet\n");
 
