@@ -1,6 +1,6 @@
 # Testserver
 
-This is a standalone Linux test application to allow development of this
+This is a standalone Linux/cygwin test application to allow development of this
 library without going through the slow process of always testing on the ESP32.
 Almost all of the code is the same - only platglue-posix.h differs from
 platglue-esp32.h (thus serving as a crude HAL).
